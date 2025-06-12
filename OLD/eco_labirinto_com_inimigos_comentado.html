@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eco Labirinto com Inimigos e Radar</title>
+    <style>
+      body {
+        margin: 0;
+        background: black;
+        color: white;
+        font-family: sans-serif;
+      }
+      #header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #222;
+        padding: 5px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+      }
+      #tips {
+        position: fixed;
+        top: 40px;
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+        z-index: 10;
+      }
+      canvas {
+        display: block;
+        margin-top: 70px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="header">
+      <div id="phase">Fase: 1</div>
+      <div id="powerup">Palmas: Pronto</div>
+      <div id="radar">Radar: 1</div>
+      <div id="lives">Vidas: ♥♥♥</div>
+    </div>
+    <div id="tips">Ande para gerar eco e encontrar a saída verde.</div>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+      // === CONFIGURAÇÕES DO JOGO ===
+      const STEP_RAYS = 30; // número de raios por passo (antes 60)
+      const CLAP_RAYS = 60; // número de raios por palma (antes 120)
+      const STEP_WIDTH = 2.5; // espessura das linhas de som
+
+      // Canvas & HUD
+      const canvas = document.getElementById("gameCanvas"),
+        ctx = canvas.getContext("2d"),
+        phaseEl = document.getElementById("phase"),
+        puEl = document.getElementById("powerup"),
+        radarEl = document.getElementById("radar"),
+        livesEl = document.getElementById("lives"),
+        tipsEl = document.getElementById("tips");
+        ROWS = 15,
+        COLS = 15;
+
+      let TILE;
+      
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 70;
+        TILE = canvas.height / ROWS;
+      }
+      
+      window.addEventListener("resize", resize);
+      
+      resize();
+
+      // Mapas completos
+      const maps = [
+        // fase1
+        Array.from({ length: ROWS }, (_, r) =>
+          r === 1
+            ? [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+            : Array(COLS).fill(1)
+        ),
+        // fase2
+        [
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1],
+          [1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1],
+          [1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+          [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+          [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ],
+        // fase3
+        [
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+          [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+          [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+          [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+          [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+          [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+          [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1],
+          [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+          [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ],
+      ];
+      const doors = [
+        { r: 1, c: 13, rev: false, exp: 0 },
+        { r: 12, c: 13, rev: false, exp: 0 },
+        { r: 2, c: 13, rev: false, exp: 0 },
+      ];
+
+      // Estado
+      let phase = 0,
+        lives = 3,
+        radarCount = 1,
+        radarActive = false,
+        radarTimer = 0,
+        gameOver = false;
+      let player = { x: TILE * 1.5, y: TILE * 1.5, speed: 2, radius: 6 },
+        rays = [],
+        enemies = [],
+        keys = {};
+
+      // Sons
+      const stepSound = new Audio("step1.mp3"),
+        clapSound = new Audio("clap1.mp3");
+      stepSound.volume = 0.3;
+      clapSound.volume = 0.5;
+
+      // Atualiza HUD
+      function updateHUD() {
+        phaseEl.textContent = `Fase: ${phase + 1}`;
+        puEl.textContent = "Palmas: Pronto";
+        radarEl.textContent = radarActive
+          ? `Radar: ${radarCount} (${Math.ceil(radarTimer / 1000)}s)`
+          : `Radar: ${radarCount}`;
+        livesEl.textContent = `Vidas: ${"♥".repeat(lives)}`;
+      }
+
+      // Reset fase
+      function resetPhase() {
+        player.x = TILE * 1.5;
+        player.y = TILE * 1.5;
+        rays = [];
+        doors[phase].rev = false;
+        initEnemies();
+        updateHUD();
+      }
+
+      // --- Enemy ---
+      class Enemy {
+        constructor(r, c, size) {
+          this.x = (c + 0.5) * TILE;
+          this.y = (r + 0.5) * TILE;
+          this.rad = size * TILE * 0.25;
+          this.speed = size * 0.5;
+          this.rev = false;
+          this.lastEcho = 0;
+          this.visiblePermanent = false;
+        }
+        react() {
+          this.rev = true;
+          this.lastEcho = performance.now();
+          // direção aleatória
+          const a = Math.random() * 2 * Math.PI;
+          this.vx = Math.cos(a);
+          this.vy = Math.sin(a);
+        }
+        update() {
+          if (this.rev && performance.now() - this.lastEcho < 500) {
+            // tenta andar na direção, respeitando paredes
+            const nx = this.x + this.vx * this.speed,
+              ny = this.y + this.vy * this.speed;
+            if (isWalk(nx, ny)) {
+              this.x = nx;
+              this.y = ny;
+            } else {
+              this.vx *= -1;
+              this.vy *= -1;
+            }
+          } else {
+            this.rev = false;
+          }
+        }
+        draw() {
+          if (this.rev || this.visiblePermanent) {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.rad, 0, 2 * Math.PI);
+            ctx.stroke();
+          }
+        }
+      }
+
+      function initEnemies() {
+        enemies = [];
+        if (phase === 2) {
+          // spawn em corredor: row 1, col 7
+          enemies.push(new Enemy(1, 7, 1));
+        }
+      }
+
+      // --- Ray (eco) ---
+      class Ray {
+        constructor(x, y, a, i, life = 100) {
+          this.x = x;
+          this.y = y;
+          this.dx = Math.cos(a);
+          this.dy = Math.sin(a);
+          this.int = i;
+          this.life = life;
+          this.path = [{ x, y }];
+        }
+        update() {
+          if (this.life-- <= 0 || this.int < 0.01) return false;
+          const nx = this.x + this.dx * 2,
+            ny = this.y + this.dy * 2;
+          const tx = Math.floor(nx / TILE),
+            ty = Math.floor(ny / TILE);
+          if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS) {
+            this.life = 0;
+            return false;
+          }
+          if (maps[phase][ty][tx] === 1) {
+            this.dx *= -1;
+            this.dy *= -1;
+            this.int *= 0.75;
+          } else {
+            this.x = nx;
+            this.y = ny;
+          }
+          this.path.push({ x: this.x, y: this.y });
+          this.int *= 0.99;
+          enemies.forEach((e) => {
+            if (Math.hypot(this.x - e.x, this.y - e.y) < e.rad) e.react();
+          });
+          let d = doors[phase];
+          if (tx === d.c && ty === d.r) {
+            d.rev = true;
+            d.exp = performance.now() + 1000;
+          }
+          return true;
+        }
+        draw() {
+          ctx.strokeStyle = `rgba(0,255,255,${this.int})`;
+          ctx.lineWidth = STEP_WIDTH;
+          ctx.beginPath();
+          ctx.moveTo(this.path[0].x, this.path[0].y);
+          this.path.forEach((p) => ctx.lineTo(p.x, p.y));
+          ctx.stroke();
+        }
+      }
+
+      // Eco
+      let lastStep = 0,
+        stepInt = 200,
+        lastClap = 0,
+        clapCool = 5000;
+      function triggerStep() {
+        const now = performance.now();
+        if (now - lastStep < stepInt) return;
+        lastStep = now;
+
+        for (let i = 0; i < STEP_RAYS; i++) {
+          const angle = ((2 * Math.PI) / STEP_RAYS) * i;
+          rays.push(new Ray(player.x, player.y, angle, 0.3));
+        }
+
+        stepSound.currentTime = 0;
+        stepSound.play();
+      }
+      function triggerClap() {
+        const now = performance.now();
+        if (now - lastClap < clapCool) return;
+        lastClap = now;
+        puEl.textContent = "Palmas: Recarregando";
+        setTimeout(() => (puEl.textContent = "Palmas: Pronto"), clapCool);
+        for (let i = 0; i < CLAP_RAYS; i++) {
+          const angle = ((2 * Math.PI) / CLAP_RAYS) * i;
+          rays.push(new Ray(player.x, player.y, angle, 1, 500, "clap"));
+        }
+
+        clapSound.currentTime = 0;
+        clapSound.play();
+      }
+
+      // Radar (R)
+      function triggerRadar() {
+        if (radarCount > 0 && !radarActive) {
+          radarActive = true;
+          radarTimer = 10000;
+          radarCount--;
+          radarEl.textContent = `Radar: ${radarCount}`;
+          enemies.forEach((e) => (e.visiblePermanent = true));
+        }
+      }
+
+      // Colisão paredes
+      function isWalk(x, y) {
+        const pad = player.radius - 1;
+        const l = Math.floor((x - pad) / TILE),
+          r = Math.floor((x + pad) / TILE),
+          t = Math.floor((y - pad) / TILE),
+          b = Math.floor((y + pad) / TILE);
+        return (
+          [l, r, t, b].every((i) => i >= 0 && i < COLS) &&
+          maps[phase][t][l] === 0 &&
+          maps[phase][t][r] === 0 &&
+          maps[phase][b][l] === 0 &&
+          maps[phase][b][r] === 0
+        );
+      }
+
+      // Move player
+      function move() {
+        let m = false;
+        if (keys["w"] && isWalk(player.x, player.y - player.speed)) {
+          player.y -= player.speed;
+          m = true;
+        }
+        if (keys["s"] && isWalk(player.x, player.y + player.speed)) {
+          player.y += player.speed;
+          m = true;
+        }
+        if (keys["a"] && isWalk(player.x - player.speed, player.y)) {
+          player.x -= player.speed;
+          m = true;
+        }
+        if (keys["d"] && isWalk(player.x + player.speed, player.y)) {
+          player.x += player.speed;
+          m = true;
+        }
+        if (m) triggerStep();
+      }
+
+      // Update loop
+      function update() {
+        if (gameOver) return;
+        move();
+        rays = rays.filter((r) => r.update());
+        enemies.forEach((e) => e.update());
+        if (radarActive) {
+          radarTimer -= 16;
+          if (radarTimer <= 0) radarActive = false;
+        }
+        let d = doors[phase];
+        if (d.rev && performance.now() > d.exp) d.rev = false;
+        if (d.rev) {
+          const pr = Math.floor(player.y / TILE),
+            pc = Math.floor(player.x / TILE);
+          if (pr === d.r && pc === d.c) {
+            phase++;
+            if (phase >= maps.length) {
+              tipsEl.textContent = "Parabéns, você venceu!";
+              gameOver = true;
+              return;
+            }
+            phaseEl.textContent = `Fase: ${phase + 1}`;
+            tipsEl.textContent =
+              phase === 2
+                ? "Fase 3: Cuidado! Pressione R para revelar inimigos."
+                : "Use Palmas (Space) para eco e encontre a saída.";
+            radarCount = phase === 2 ? 1 : radarCount;
+            radarEl.textContent = `Radar: ${radarCount}`;
+            puEl.textContent = "Palmas: Pronto";
+            resetPhase();
+          }
+        }
+        livesEl.textContent = "Vidas: " + "♥".repeat(lives);
+        updateHUD();
+      }
+
+      // Draw loop
+      function draw() {
+        if (gameOver) return;
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        rays.forEach((r) => r.draw());
+        enemies.forEach((e) => e.draw());
+        let d = doors[phase];
+        if (d.rev) {
+          ctx.fillStyle = "green";
+          ctx.fillRect(
+            d.c * TILE + TILE * 0.25,
+            d.r * TILE + TILE * 0.25,
+            TILE * 0.5,
+            TILE * 0.5
+          );
+        }
+        if (radarActive) {
+          let ratio = 1 - radarTimer / 10000,
+            maxR = Math.hypot(canvas.width, canvas.height);
+          ctx.strokeStyle = "rgba(0,200,200,0.5)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, ratio * maxR, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      // Teclado
+      document.addEventListener("keydown", (e) => {
+        keys[e.key.toLowerCase()] = true;
+        if (e.code === "Space") triggerClap();
+        if (e.key.toLowerCase() === "r") triggerRadar();
+      });
+      document.addEventListener("keyup", (e) => {
+        keys[e.key.toLowerCase()] = false;
+        if (!keys["w"] && !keys["a"] && !keys["s"] && !keys["d"]) {
+          stepSound.pause();
+          stepSound.currentTime = 0;
+        }
+      });
+
+      // Start
+      initEnemies();
+      resetPhase();
+      updateHUD();
+      (function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+</html>

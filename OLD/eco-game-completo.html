@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eco Labirinto com Inimigos – Radar Manual</title>
+  <style>
+    body { margin: 0; background: black; color: white; font-family: sans-serif; }
+    #header {
+      position: fixed; top: 0; left: 0; width: 100%;
+      background: #111; padding: 8px 12px; font-size: 16px;
+      display: flex; justify-content: space-between; z-index: 10;
+    }
+    #tips {
+      position: fixed; top: 40px; width: 100%;
+      text-align: center; font-size: 14px; z-index: 10;
+    }
+    canvas {
+      display: block; margin-top: 70px; background: black;
+    }
+  </style>
+</head>
+<body>
+  <!-- HUD no topo -->
+  <div id="header">
+    <div id="phase">Fase: 1</div>
+    <div id="powerup">Palmas: Pronto</div>
+    <div id="radar">Radar: 0</div>
+    <div id="lives">Vidas: ♥♥♥</div>
+  </div>
+  <!-- Dicas da fase -->
+  <div id="tips">Ande com W/A/S/D para gerar eco e encontrar a saída verde.</div>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+  // ======================================
+  // CONFIGURAÇÃO INICIAL
+  // ======================================
+  const canvas = document.getElementById('gameCanvas');
+  const ctx    = canvas.getContext('2d');
+  const phaseEl  = document.getElementById('phase');
+  const puEl     = document.getElementById('powerup');
+  const radarEl  = document.getElementById('radar');
+  const livesEl  = document.getElementById('lives');
+  const tipsEl   = document.getElementById('tips');
+
+  let TILE_SIZE;
+  const ROWS = 15, COLS = 15;
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight - 70;
+    TILE_SIZE     = canvas.height / ROWS;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ======================================
+  // MAPAS E FASES
+  // ======================================
+  const maps = [
+    // Fase 1: corredor reto na linha 7
+    {
+      grid: Array.from({length: ROWS}, (_, r) =>
+        r === 7
+          ? [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+          : Array(COLS).fill(1)
+      ),
+      exit: { r: 7, c: 13 },
+      tip : 'Bem-vindo! Use W/A/S/D para andar e SPACE para eco. Siga até a saída verde.'
+    },
+    // Fase 2: labirinto intermediário
+    {
+      grid: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,1,1,1,1,1,0,1],
+        [1,0,1,1,0,1,0,1,1,1,0,1,1,0,1],
+        [1,0,1,0,0,1,0,0,0,1,0,0,1,0,1],
+        [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+        [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+        [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+        [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      exit: { r: 1, c: 13 },
+      tip : 'Fase 2: Use SPACE para eco e explore o labirinto até a saída.'
+    },
+    // Fase 3: labirinto avançado, inimigos e radar manual
+    {
+      grid: [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,0,1,0,1,0,1],
+        [1,0,0,0,0,0,0,0,1,0,0,0,1,0,1],
+        [1,1,1,1,1,1,1,0,1,1,1,0,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+        [1,0,1,0,0,0,1,0,0,0,1,0,1,0,1],
+        [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      ],
+      exit: { r: 1, c: 13 },
+      tip : 'Fase 3: Cuidado com inimigos! Você ganhou um Radar (R) — ' +
+            'aperte R para revelá-los por 10s. Use com sabedoria.'
+    }
+  ];
+
+  // ======================================
+  // ESTADO DO JOGO
+  // ======================================
+  let currentPhase = 0;
+  let lives        = 3;
+  let radarCount   = 1;
+  let radarActive  = false;
+  let radarTimer   = 0;
+
+  const player = {
+    x: TILE_SIZE * 1.5,
+    y: TILE_SIZE * 1.5,
+    speed: 2,
+    radius: 6
+  };
+
+  let keys    = {};
+  let rays    = [];
+  let enemies = [];
+
+  const stepSound = new Audio('step1.mp3');
+  const clapSound = new Audio('clap1.mp3');
+  stepSound.volume = 0.3;
+  clapSound.volume = 0.5;
+
+  // ======================================
+  // FUNÇÕES AUXILIARES
+  // ======================================
+  function resetPhase() {
+    // reposiciona jogador e limpa ecos e inimigos
+    player.x = TILE_SIZE * 1.5;
+    player.y = TILE_SIZE * 1.5;
+    rays    = [];
+    enemies = [];
+    radarActive = false;
+    radarTimer  = 0;
+    initEnemies();
+    updateHUD();
+  }
+
+  function updateHUD() {
+    phaseEl.textContent = `Fase: ${currentPhase+1}`;
+    puEl.textContent    = 'Palmas: Pronto';
+    let radarText = radarActive
+      ? `Radar: ${radarCount} (${Math.ceil(radarTimer/1000)}s)`
+      : `Radar: ${radarCount}`;
+    radarEl.textContent = radarText;
+    livesEl.textContent = `Vidas: ${'♥'.repeat(lives)}`;
+  }
+
+  function initEnemies() {
+    // só na fase 3
+    enemies = [];
+    if (currentPhase === 2) {
+      enemies.push({
+        x: (6 + 0.5)*TILE_SIZE,
+        y: (2 + 0.5)*TILE_SIZE,
+        radius: TILE_SIZE*0.25,
+        speed: 0.5,
+        revealed: false,
+        lastEcho: 0
+      });
+    }
+  }
+
+  function canWalk(nx, ny) {
+    // parede = 1, chão = 0
+    const pad = player.radius - 1;
+    const l   = Math.floor((nx - pad)/TILE_SIZE);
+    const r   = Math.floor((nx + pad)/TILE_SIZE);
+    const t   = Math.floor((ny - pad)/TILE_SIZE);
+    const b   = Math.floor((ny + pad)/TILE_SIZE);
+    const g   = maps[currentPhase].grid;
+    return g[t]?.[l]===0 && g[t]?.[r]===0 && g[b]?.[l]===0 && g[b]?.[r]===0;
+  }
+
+  // ======================================
+  // CLASSE RAY (eco)
+  // ======================================
+  class Ray {
+    constructor(x,y,angle,intensity,life=100) {
+      this.x = x; this.y = y;
+      this.dx = Math.cos(angle); this.dy = Math.sin(angle);
+      this.intensity = intensity;
+      this.life = life;
+      this.path = [{x,y}];
+    }
+    update() {
+      if (this.life-- <= 0) return false;
+      const nx = this.x + this.dx*2;
+      const ny = this.y + this.dy*2;
+      const gr = maps[currentPhase].grid;
+      const tc = Math.floor(nx/TILE_SIZE);
+      const tr = Math.floor(ny/TILE_SIZE);
+      // fora?
+      if (tr<0||tc<0||tr>=ROWS||tc>=COLS) return false;
+      // parede?
+      if (gr[tr][tc]===1) {
+        this.dx *= -1; this.dy *= -1;
+        this.intensity *= 0.75;
+      } else {
+        this.x = nx; this.y = ny;
+      }
+      this.path.push({x:this.x, y:this.y});
+      this.intensity *= 0.99;
+      // reverbera em inimigos
+      enemies.forEach(e=>{
+        const d2 = (this.x - e.x)**2 + (this.y - e.y)**2;
+        if (d2 < e.radius*e.radius) {
+          e.revealed = true;
+          e.lastEcho = performance.now();
+        }
+      });
+      return true;
+    }
+    draw() {
+      ctx.strokeStyle = `rgba(0,255,255,${this.intensity})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(this.path[0].x, this.path[0].y);
+      this.path.forEach(p=> ctx.lineTo(p.x,p.y));
+      ctx.stroke();
+    }
+  }
+
+  // ======================================
+  // DISPARO DE ECOS
+  // ======================================
+  let lastStep = 0, stepInterval = 200;
+  let lastClap = 0, clapCooldown  = 5000;
+
+  function triggerStep() {
+    const now = performance.now();
+    if (now - lastStep < stepInterval) return;
+    lastStep = now;
+    for (let i=0; i<60; i++) {
+      const ang = 2*Math.PI/60 * i;
+      rays.push(new Ray(player.x, player.y, ang, 1));
+    }
+    stepSound.currentTime = 0;
+    stepSound.play();
+  }
+
+  function triggerClap() {
+    const now = performance.now();
+    if (now - lastClap < clapCooldown) return;
+    lastClap = now;
+    puEl.textContent = 'Palmas: Recarregando';
+    setTimeout(()=> puEl.textContent = 'Palmas: Pronto', clapCooldown);
+    for (let i=0; i<120; i++) {
+      const ang = 2*Math.PI/120 * i;
+      rays.push(new Ray(player.x, player.y, ang, 1, 200));
+    }
+    clapSound.currentTime = 0;
+    clapSound.play();
+  }
+
+  // ======================================
+  // TRIGGER RADAR (tecla R)
+  // ======================================
+  function triggerRadar() {
+    if (radarCount > 0 && !radarActive) {
+      radarActive = true;
+      radarTimer  = 10000; // 10s
+      radarCount--;
+      radarEl.textContent = `Radar: ${radarCount} (10s)`;
+      enemies.forEach(e => {
+        e.revealed = true;
+        e.lastEcho = performance.now();
+      });
+    }
+  }
+
+  // ======================================
+  // LOOP DE ATUALIZAÇÃO
+  // ======================================
+  function update() {
+    // movimentação
+    if (keys['w'] && canWalk(player.x, player.y - player.speed)) player.y -= player.speed;
+    if (keys['s'] && canWalk(player.x, player.y + player.speed)) player.y += player.speed;
+    if (keys['a'] && canWalk(player.x - player.speed, player.y)) player.x -= player.speed;
+    if (keys['d'] && canWalk(player.x + player.speed, player.y)) player.x += player.speed;
+
+    // radar countdown
+    if (radarActive) {
+      radarTimer -= 16;
+      if (radarTimer <= 0) {
+        radarActive = false;
+        // oculta inimigos não despertados por eco
+        enemies.forEach(e => {
+          if (performance.now() - e.lastEcho > 500) e.revealed = false;
+        });
+        radarEl.textContent = `Radar: ${radarCount}`;
+      }
+    }
+
+    // atualiza ecos
+    rays = rays.filter(r=> r.update());
+
+    // atualiza inimigos
+    enemies.forEach(e=>{
+      // movem-se só após eco local
+      if (e.revealed && performance.now() - e.lastEcho < 500) {
+        e.x += (Math.random()-0.5)*e.speed;
+        e.y += (Math.random()-0.5)*e.speed;
+      } else {
+        if (!radarActive) e.revealed = false;
+      }
+      // colisão com jogador
+      const dx = e.x - player.x, dy = e.y - player.y;
+      if (e.revealed && Math.hypot(dx,dy) < e.radius + player.radius) {
+        lives--;
+        resetPhase();
+        if (lives <= 0) {
+          currentPhase = 0;
+          lives = 3;
+          resetPhase();
+        }
+      }
+    });
+
+    // checa saída
+    const d = maps[currentPhase].exit;
+    const pr = Math.floor(player.y / TILE_SIZE);
+    const pc = Math.floor(player.x / TILE_SIZE);
+    if (pr === d.r && pc === d.c) {
+      currentPhase++;
+      if (currentPhase >= maps.length) {
+        tipsEl.textContent = 'Parabéns! Você completou o jogo!';
+      } else {
+        tipsEl.textContent = maps[currentPhase].tip;
+        resetPhase();
+      }
+      phaseEl.textContent = `Fase: ${currentPhase+1}`;
+    }
+
+    updateHUD();
+  }
+
+  // ======================================
+  // LOOP DE DESENHO
+  // ======================================
+  function draw() {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // desenha paredes
+    const g = maps[currentPhase].grid;
+    for (let r=0; r<ROWS; r++) {
+      for (let c=0; c<COLS; c++) {
+        if (g[r][c] === 1) {
+          ctx.fillStyle='#333';
+          ctx.fillRect(c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+    }
+
+    // desenha ecos
+    rays.forEach(r=>r.draw());
+
+    // desenha saída
+    const door = maps[currentPhase].exit;
+    ctx.fillStyle='green';
+    ctx.fillRect(door.c*TILE_SIZE + TILE_SIZE*0.25,
+                 door.r*TILE_SIZE + TILE_SIZE*0.25,
+                 TILE_SIZE*0.5, TILE_SIZE*0.5);
+
+    // desenha inimigos revelados
+    enemies.forEach(e=>{
+      if (e.revealed) {
+        ctx.strokeStyle='red';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.radius,0,2*Math.PI);
+        ctx.stroke();
+      }
+    });
+  }
+
+  // ======================================
+  // EVENTOS DE TECLADO
+  // ======================================
+  document.addEventListener('keydown', e=>{
+    keys[e.key.toLowerCase()] = true;
+    if (e.code==='Space') triggerClap();
+    if (e.key.toLowerCase()==='r') triggerRadar();
+  });
+  document.addEventListener('keyup', e=>{
+    keys[e.key.toLowerCase()] = false;
+    // para som de passo
+    if (!keys['w']&&!keys['a']&&!keys['s']&&!keys['d']) {
+      stepSound.pause();
+      stepSound.currentTime = 0;
+    }
+  });
+
+  // ======================================
+  // INICIALIZAÇÃO
+  // ======================================
+  tipsEl.textContent  = maps[0].tip;
+  initEnemies();
+  resetPhase();
+  updateHUD();
+  (function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  })();
+
+  </script>
+</body>
+</html>

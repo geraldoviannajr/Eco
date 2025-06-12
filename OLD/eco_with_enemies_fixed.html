@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Eco Labirinto com Inimigos</title>
+  <style>
+    body {margin:0; background:black; color:white; font-family:sans-serif;}
+    #header{position:fixed;top:0;left:0;width:100%;background:#222;padding:5px;display:flex;justify-content:space-between;z-index:10;}
+    #tips{position:fixed;top:40px;width:100%;text-align:center;font-size:14px;z-index:10;}
+    canvas{display:block;margin-top:70px;}
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="phase">Fase:1</div>
+    <div id="powerup">Powerup:Pronto</div>
+    <div id="lives">Vidas:♥♥♥</div>
+  </div>
+  <div id="tips">Ande para gerar eco e encontrar a saída.</div>
+  <canvas id="gameCanvas"></canvas>
+<script>
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+let TILE,ROWS=15,COLS=15;
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight-70;TILE=canvas.height/ROWS;}
+window.addEventListener('resize',resize);
+resize();
+
+// Maps for three phases
+const maps=[
+  // Phase1: straight corridor row1
+  Array.from({length:ROWS},(_,r)=> r===1?[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]:Array(15).fill(1)),
+  // Phase2: previous maze
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,1,1,1,1,1,0,1],
+    [1,0,1,1,0,1,0,1,1,1,0,1,1,0,1],
+    [1,0,1,0,0,1,0,0,0,1,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  // Phase3: new maze
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,0,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,1,0,1],
+    [1,1,1,1,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ]
+];
+
+const doors=[
+  {r:1,c:13,rev:false,exp:0},
+  {r:12,c:13,rev:false,exp:0},
+  {r:2,c:13,rev:false,exp:0}
+];
+
+let phase=0,lives=3;
+let player={x:TILE*1.5,y:TILE*1.5,speed:2};
+let rays=[], keys={}, enemies=[];
+let lastStep=0,stepInt=200,lastClap=0,clapCool=5000;
+const stepSound=new Audio('step1.mp3'), clapSound=new Audio('clap1.mp3');
+stepSound.volume=0.3; clapSound.volume=0.5;
+const phaseText=document.getElementById('phase'),
+      puText=document.getElementById('powerup'),
+      livesText=document.getElementById('lives'),
+      tips=document.getElementById('tips');
+
+// Enemy class
+class Enemy{
+  constructor(r,c,size){
+    this.r=r;this.c=c;this.size=size;
+    this.x=(c+0.5)*TILE;this.y=(r+0.5)*TILE;
+    this.rad=size*TILE/4;
+    this.speed=size*0.5;
+    this.rev=false;this.lastE=0;
+    this.vx=0;this.vy=0;
+  }
+  react(){
+    this.rev=true;this.lastE=performance.now();
+    let a=Math.random()*2*Math.PI;
+    this.vx=Math.cos(a);this.vy=Math.sin(a);
+  }
+  update(){
+    if(this.rev && performance.now()-this.lastE<500){
+      this.x+=this.vx*this.speed;
+      this.y+=this.vy*this.speed;
+    } else this.rev=false;
+    // collision with player
+    let dx=this.x-player.x, dy=this.y-player.y;
+    if(this.rev && Math.hypot(dx,dy)<this.rad+6){
+      lives--; if(lives<=0){phase=0; lives=3;}
+      resetPhase(); return;
+    }
+  }
+  draw(){
+    if(!this.rev) return;
+    ctx.strokeStyle='red';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(this.x,this.y,this.rad,0,2*Math.PI);ctx.stroke();
+  }
+}
+function initEnemies(){
+  enemies=[];
+  if(phase===2) enemies.push(new Enemy(2,6,1));
+}
+function resetPhase(){
+  player.x=TILE*1.5;player.y=TILE*1.5;
+  rays=[]; doors[phase].rev=false;
+  initEnemies();
+}
+initEnemies();
+
+// Ray class
+class Ray{
+  constructor(x,y,a,i,life=100,b=5,type='step'){
+    this.x=x;this.y=y;this.dx=Math.cos(a);this.dy=Math.sin(a);
+    this.int=i;this.life=life;this.b=b;this.type=type;this.path=[{x,y}];
+  }
+  update(){
+    if(this.life<=0||this.int<0.01) return false;
+    let nx=this.x+this.dx*2,ny=this.y+this.dy*2;
+    let tx=Math.floor(nx/TILE),ty=Math.floor(ny/TILE);
+    if(tx<0||ty<0||tx>=COLS||ty>=ROWS){this.life=0;return false;}
+    if(maps[phase][ty][tx]===1){
+      let bx=maps[phase][Math.floor(this.y/TILE)][Math.floor((this.x+this.dx*2)/TILE)]===1;
+      let by=maps[phase][Math.floor((this.y+this.dy*2)/TILE)][Math.floor(this.x/TILE)]===1;
+      if(bx) this.dx*=-1; if(by) this.dy*=-1;
+      if(!bx&&!by){this.dx*=-1;this.dy*=-1;}
+      this.int*=0.75;this.b--;
+    } else {this.x=nx;this.y=ny;}
+    this.path.push({x:this.x,y:this.y});
+    this.life--;
+    this.int*= (this.type==='clap'?0.99:0.985);
+    // door reveal
+    let d=doors[phase];
+    if(tx===d.c && ty===d.r){d.rev=true;d.exp=performance.now()+1000;}
+    // enemy react
+    for(let e of enemies){
+      let dx=this.x-e.x,dy=this.y-e.y;
+      if(Math.hypot(dx,dy)<e.rad) e.react();
+    }
+    return true;
+  }
+  draw(){
+    if(this.path.length<2)return;
+    ctx.strokeStyle=`rgba(0,255,255,${this.int})`;
+    ctx.lineWidth=1;ctx.beginPath();
+    ctx.moveTo(this.path[0].x,this.path[0].y);
+    this.path.forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();
+  }
+}
+
+// controls
+document.addEventListener('keydown', e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener('keyup', e=>{
+  keys[e.key.toLowerCase()]=false;
+  if(!keys['w']&&!keys['a']&&!keys['s']&&!keys['d']){
+    stepSound.pause();stepSound.currentTime=0;
+  }
+});
+
+function triggerStep(){
+  let now=performance.now();
+  if(now-lastStep<stepInt)return;
+  lastStep=now;
+  for(let i=0;i<60;i++)rays.push(new Ray(player.x,player.y,2*Math.PI/60*i,0.3,100,5,'step'));
+  stepSound.currentTime=0;stepSound.play();
+}
+function triggerClap(){
+  let now=performance.now();
+  if(now-lastClap<clapCool)return;
+  lastClap=now;puText.textContent='Powerup:Recarregando';
+  setTimeout(()=>puText.textContent='Powerup:Pronto',clapCool);
+  for(let i=0;i<120;i++)rays.push(new Ray(player.x,player.y,2*Math.PI/120*i,1,500,5,'clap'));
+  clapSound.currentTime=0;clapSound.play();
+}
+function isWalk(x,y){
+  let pad=6-1;
+  let l=Math.floor((x-pad)/TILE),r=Math.floor((x+pad)/TILE);
+  let t=Math.floor((y-pad)/TILE),b=Math.floor((y+pad)/TILE);
+  return [l,r,t,b].every(idx=>idx>=0&&idx<COLS)&&maps[phase][t][l]===0&&maps[phase][t][r]===0&&maps[phase][b][l]===0&&maps[phase][b][r]===0;
+}
+function move(){
+  let m=false;
+  if(keys['w']){let ny=player.y-player.speed;if(isWalk(player.x,ny)){player.y=ny;m=true;}}
+  if(keys['s']){let ny=player.y+player.speed;if(isWalk(player.x,ny)){player.y=ny;m=true;}}
+  if(keys['a']){let nx=player.x-player.speed;if(isWalk(nx,player.y)){player.x=nx;m=true;}}
+  if(keys['d']){let nx=player.x+player.speed;if(isWalk(nx,player.y)){player.x=nx;m=true;}}
+  if(m) triggerStep();
+}
+function update(){
+  move();
+  rays=rays.filter(r=>r.update());
+  enemies.forEach(e=>e.update());
+  let d=doors[phase];
+  if(d.rev&&performance.now()>d.exp)d.rev=false;
+  if(d.rev){
+    let pr=Math.floor(player.y/TILE),pc=Math.floor(player.x/TILE);
+    if(pr===d.r&&pc===d.c){
+      phase++;
+      if(phase>=maps.length){tips.textContent='Fim!';return;}
+      phaseText.textContent='Fase:'+(phase+1);
+      puText.textContent='Powerup:Pronto';
+      resetPhase();
+      tips.textContent=phase===2?'Cuidado! Inimigos reagem ao eco!':'Use Palmas...';
+    }
+  }
+}
+function draw(){
+  ctx.fillStyle='black';ctx.fillRect(0,0,canvas.width,canvas.height);
+  rays.forEach(r=>r.draw());
+  enemies.forEach(e=>e.draw());
+  let d=doors[phase];
+  if(d.rev){
+    ctx.fillStyle='green';
+    ctx.fillRect(d.c*TILE+TILE*0.25,d.r*TILE+TILE*0.25,TILE*0.5,TILE*0.5);
+  }
+  livesText.textContent='Vidas:'+ '♥'.repeat(lives);
+}
+function loop(){update();draw();requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

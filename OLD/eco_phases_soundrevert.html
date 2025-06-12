@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eco Labirinto - Fases</title>
+  <style>
+    body { margin: 0; background: black; color: white; font-family: sans-serif; }
+    #header { position: fixed; top: 0; left: 0; width: 100%; background: #222; padding: 5px; z-index: 10;
+              display: flex; justify-content: space-between; align-items: center; }
+    #header div { margin: 0 10px; }
+    #tips { position: fixed; top: 40px; left: 0; width: 100%; text-align: center; font-size: 14px; z-index: 10; }
+    #gameCanvas { display: block; margin-top: 70px; background: black; }
+  </style>
+</head>
+<body>
+<div id="header">
+  <div id="phase">Fase: 1</div>
+  <div id="powerup">Powerup: Pronto</div>
+  <div id="lives">Vidas: ♥♥♥</div>
+</div>
+<div id="tips">Ande para gerar seu eco e encontrar a saída verde.</div>
+<canvas id="gameCanvas"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let TILE, ROWS = 15, COLS = 15;
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight - 70;
+  TILE = canvas.height / ROWS;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const maps = [
+  Array.from({length: ROWS}, (_, r) =>
+    r === 1
+      ? [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+      : Array(ROWS).fill(1)
+  ),
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,1,1,1,1,1,0,1],
+    [1,0,1,1,0,1,0,1,1,1,0,1,1,0,1],
+    [1,0,1,0,0,1,0,0,0,1,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  ]
+];
+
+const doors = [
+  {r:1,c:13, revealed:false, expire:0},
+  {r:12,c:13, revealed:false, expire:0}
+];
+
+let phase = 0, lives = 3;
+let player = { x: TILE*1.5, y: TILE*1.5, speed: 2 };
+let rays = [], keys = {};
+let lastStep=0, stepInt=200;
+let lastClap=0, clapCool=5000;
+const stepSound = new Audio('step1.mp3');
+const clapSound = new Audio('clap1.mp3');
+stepSound.volume=0.3;
+clapSound.volume=0.5;
+const phaseText=document.getElementById('phase'), puText=document.getElementById('powerup');
+const livesText=document.getElementById('lives'), tips=document.getElementById('tips');
+
+document.addEventListener('keydown', e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener('keyup', e=>{
+  keys[e.key.toLowerCase()]=false;
+  // stop step sound on keyup when no movement keys pressed
+  if(!keys['w']&&!keys['a']&&!keys['s']&&!keys['d']){
+    stepSound.pause();
+    stepSound.currentTime = 0;
+  }
+});
+
+class Ray{
+  constructor(x,y,a,i,l=100,b=5){
+    this.x=x; this.y=y; this.dx=Math.cos(a); this.dy=Math.sin(a);
+    this.int=i; this.life=l; this.b=b; this.path=[{x,y}];
+  }
+  update(){
+    if(this.life<=0||this.int<0.01) return false;
+    let nx=this.x+this.dx*2, ny=this.y+this.dy*2;
+    let tx=Math.floor(nx/TILE), ty=Math.floor(ny/TILE);
+    if(tx<0||ty<0||tx>=COLS||ty>=ROWS){ this.life=0; return false; }
+    if(maps[phase][ty][tx]===1){
+      let bx = maps[phase][Math.floor(this.y/TILE)][Math.floor((this.x+this.dx*2)/TILE)]===1;
+      let by = maps[phase][Math.floor((this.y+this.dy*2)/TILE)][Math.floor(this.x/TILE)]===1;
+      if(bx) this.dx*=-1; if(by) this.dy*=-1;
+      if(!bx&&!by){ this.dx*=-1; this.dy*=-1; }
+      this.int*=0.75; this.b--;
+    } else {
+      this.x=nx; this.y=ny;
+    }
+    this.path.push({x:this.x,y:this.y});
+    this.life--; 
+    
+    if (this.type === 'clap') {
+      this.int *= 0.99;
+    } else {
+      this.int *= 0.985;
+    }
+  
+    let d=doors[phase];
+    if(tx===d.c && ty===d.r){
+      d.revealed=true; d.expire=performance.now()+1000;
+    }
+    return true;
+  }
+  draw(){
+    if(this.path.length<2) return;
+    ctx.strokeStyle=`rgba(0,255,255,${this.int})`;
+    ctx.lineWidth=1; ctx.beginPath();
+    ctx.moveTo(this.path[0].x,this.path[0].y);
+    this.path.forEach(p=>ctx.lineTo(p.x,p.y)); ctx.stroke();
+  }
+}
+
+function triggerStep(){
+  let now=performance.now();
+  if(now-lastStep<stepInt) return;
+  lastStep=now;
+  for(let i=0;i<60;i++){
+    rays.push(new Ray(player.x,player.y,2*Math.PI/60*i,0.3));
+  }
+  stepSound.currentTime = 0;
+  stepSound.play();
+}
+
+function triggerClap(){
+  let now = performance.now();
+  if (now - lastClap < clapCool) return;
+  lastClap = now;
+  puText.textContent = 'Powerup: Recarregando';
+  setTimeout(() => puText.textContent = 'Powerup: Pronto', clapCool);
+
+  // Vida aumentada de 200 → 500
+  for (let i = 0; i < 120; i++) {
+    rays.push(new Ray(
+      player.x,
+      player.y,
+      (2 * Math.PI / 120) * i,
+      1,      // intensidade
+      500,    // vida (antes 200)
+      5,
+      'clap'
+    ));
+  }
+
+  clapSound.currentTime = 0;
+  clapSound.play();
+}
+
+function isWalk(x,y){
+  let pad=6-1;
+  let l=Math.floor((x-pad)/TILE), r=Math.floor((x+pad)/TILE);
+  let t=Math.floor((y-pad)/TILE), b=Math.floor((y+pad)/TILE);
+  return [l,r,t,b].every(idx=>idx>=0 && idx<COLS) &&
+    maps[phase][t][l]===0 && maps[phase][t][r]===0 &&
+    maps[phase][b][l]===0 && maps[phase][b][r]===0;
+}
+
+function move(){
+  let moved=false;
+  if(keys['w']){ let ny=player.y-player.speed; if(isWalk(player.x,ny)){player.y=ny; moved=true;} }
+  if(keys['s']){ let ny=player.y+player.speed; if(isWalk(player.x,ny)){player.y=ny; moved=true;} }
+  if(keys['a']){ let nx=player.x-player.speed; if(isWalk(nx,player.y)){player.x=nx; moved=true;} }
+  if(keys['d']){ let nx=player.x+player.speed; if(isWalk(nx,player.y)){player.x=nx; moved=true;} }
+  if(moved) triggerStep();
+}
+
+function update(){
+  move();
+  rays = rays.filter(r=>r.update());
+  let d=doors[phase];
+  if(d.revealed && performance.now()>d.expire) d.revealed=false;
+  if(d.revealed){
+    let pr=Math.floor(player.y/TILE), pc=Math.floor(player.x/TILE);
+    if(pr===d.r && pc===d.c){
+      phase++;
+      if(phase>=maps.length){ tips.textContent='Parabéns, fim do jogo!'; return; }
+      phaseText.textContent='Fase: '+(phase+1);
+      puText.textContent='Powerup: Pronto';
+      rays=[]; player.x=TILE*1.5; player.y=TILE*1.5;
+      doors[phase].revealed=false;
+      tips.textContent = phase===1 ?
+        'Use Palmas (Space) para eco poderoso e revelar corredores.' : '';
+    }
+  }
+}
+
+function draw(){
+  ctx.fillStyle='black'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  rays.forEach(r=>r.draw());
+  let d=doors[phase];
+  if(d.revealed){
+    ctx.fillStyle='green';
+    ctx.fillRect(d.c*TILE+TILE*0.25, d.r*TILE+TILE*0.25, TILE*0.5, TILE*0.5);
+  }
+}
+
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+
+document.addEventListener('keydown', e=>{
+  keys[e.key.toLowerCase()]=true;
+  if(e.code==='Space') triggerClap();
+});
+document.addEventListener('keyup', e=>keys[e.key.toLowerCase()]=false);
+
+loop();
+</script>
+</body>
+</html>

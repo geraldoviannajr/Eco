@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eco Labirinto com Inimigos</title>
+  <style>
+    body { margin: 0; background: black; color: white; font-family: sans-serif; }
+    #header { position: fixed; top: 0; left: 0; width: 100%; background: #222; padding: 5px; z-index: 10;
+              display: flex; justify-content: space-between; align-items: center; }
+    #header div { margin: 0 10px; }
+    #tips { position: fixed; top: 40px; left: 0; width: 100%; text-align: center; font-size: 14px; z-index: 10; }
+    #gameCanvas { display: block; margin-top: 70px; background: black; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="phase">Fase: 1</div>
+    <div id="powerup">Powerup: Pronto</div>
+    <div id="lives">Vidas: ♥♥♥</div>
+  </div>
+  <div id="tips">Ande para gerar seu eco e encontrar a saída verde.</div>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    // Canvas setup
+    const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+    let TILE, ROWS=15, COLS=15;
+    function resize(){
+      canvas.width=window.innerWidth;
+      canvas.height=window.innerHeight-70;
+      TILE=canvas.height/ROWS;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Maps for 3 phases
+    const maps = [
+      // Phase 1: tutorial corridor
+      Array.from({length:ROWS}, (_,r)=> r===1 ? [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1] : Array(15).fill(1)),
+      // Phase 2: existing maze
+      [ /* ... same as before phase2 ... */ ],
+      // Phase 3: more corridors
+      [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,0,1,0,1,0,1],
+        [1,0,0,0,0,0,0,0,1,0,0,0,1,0,1],
+        [1,1,1,1,1,1,1,0,1,1,1,0,1,0,1],
+        [1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+        [1,0,1,0,0,0,1,0,0,0,1,0,1,0,1],
+        [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      ]
+    ];
+
+    // Doors per phase
+    const doors=[ {r:1,c:13,revealed:false,expire:0}, {r:12,c:13,revealed:false,expire:0}, {r:2,c:13,revealed:false,expire:0} ];
+
+    // Enemy class
+    class Enemy {
+      constructor(x,y,size){
+        this.x=x; this.y=y; this.size=size;
+        this.radius=size*TILE/4; // radius in px
+        this.speed=size*0.5; // bigger faster
+        this.revealed=false; this.lastEcho=0;
+        this.dir={x:0,y:0};
+      }
+      // Called when a ray echoes on enemy
+      react(){
+        this.revealed=true; this.lastEcho=performance.now();
+        // pick random direction unit vector
+        let angle=Math.random()*2*Math.PI;
+        this.dir={x:Math.cos(angle),y:Math.sin(angle)};
+      }
+      update(){ 
+        // move if within 500ms of last echo
+        if(performance.now()-this.lastEcho<500){
+          this.x+=this.dir.x*this.speed;
+          this.y+=this.dir.y*this.speed;
+        } else {
+          this.revealed=false;
+        }
+      }
+      draw(){
+        if(!this.revealed) return;
+        ctx.strokeStyle='red';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.arc(this.x,this.y,this.radius,0,2*Math.PI);
+        ctx.stroke();
+      }
+    }
+
+    // Game state
+    let phase=0,lives=3;
+    let player={x:TILE*1.5,y:TILE*1.5,speed:2};
+    let rays=[], enemies=[];
+    let keys={}, lastStep=0,stepInt=200,lastClap=0,clapCool=5000;
+    const stepSound=new Audio('step1.mp3'), clapSound=new Audio('clap1.mp3');
+    stepSound.volume=0.3; clapSound.volume=0.5;
+
+    // Setup enemies for phase3
+    function initEnemies(){
+      enemies=[];
+      if(phase===2){
+        // place one small enemy at row2,col6
+        let cx=(6+0.5)*TILE, cy=(2+0.5)*TILE;
+        enemies.push(new Enemy(cx,cy,1)); // size=1 slow
+      }
+    }
+    initEnemies();
+
+    // Key handling
+    document.addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
+    document.addEventListener('keyup',e=>{
+      keys[e.key.toLowerCase()]=false;
+      if(!keys['w']&&!keys['a']&&!keys['s']&&!keys['d']){
+        stepSound.pause(); stepSound.currentTime=0;
+      }
+    });
+
+    // Ray class (same as before)...
+
+    // ... code for Ray and triggerStep/triggerClap ...
+
+    // Extend Ray.update to check for enemy hit
+    // In Ray.update, after pushing path:
+    // for(const enemy of enemies){
+    //   let dx=this.x-enemy.x, dy=this.y-enemy.y;
+    //   if(Math.hypot(dx,dy)<enemy.radius){
+    //     enemy.react();
+    //   }
+    // }
+
+    // In game loop: update enemies and draw them
+
+    // Collision check: if enemy.revealed and distance player-enemy<sum radii -> lose life and reset phase
+
+    // Phase progression: on reaching door as before, phase++, initEnemies()
+
+    // Render tips per phase:
+    // phase1: "Tutorial..."
+    // phase2: "Use palmas..."
+    // phase3: "Cuidado com inimigos: revele-os com eco!"
+
+    // Starting main loop...
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Eco Labirinto com Inimigos</title>
+  <style>
+    body {margin:0; background:black; color:white; font-family:sans-serif;}
+    #header{position:fixed;top:0;left:0;width:100%;background:#222;padding:5px;display:flex;justify-content:space-between;z-index:10;}
+    #tips{position:fixed;top:40px;width:100%;text-align:center;font-size:14px;z-index:10;}
+    canvas{display:block;margin-top:70px;}
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="phase">Fase:1</div>
+    <div id="powerup">Powerup:Pronto</div>
+    <div id="lives">Vidas:♥♥♥</div>
+  </div>
+  <div id="tips">Ande para gerar eco e encontrar a saída.</div>
+  <canvas id="gameCanvas"></canvas>
+<script>
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+let TILE,ROWS=15,COLS=15;
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight-70;TILE=canvas.height/ROWS;}
+window.addEventListener('resize',resize);
+resize();
+
+// Maps for three phases
+const maps=[
+  // Phase1: straight corridor row1
+  Array.from({length:ROWS},(_,r)=> r===1?[1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]:Array(15).fill(1)),
+  // Phase2: previous maze
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,1,1,1,1,1,0,1],
+    [1,0,1,1,0,1,0,1,1,1,0,1,1,0,1],
+    [1,0,1,0,0,1,0,0,0,1,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+    [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ],
+  // Phase3: new maze
+  [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,0,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,1,0,1],
+    [1,1,1,1,1,1,1,0,1,1,1,0,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+    [1,0,1,0,0,0,1,0,0,0,1,0,1,0,1],
+    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+  ]
+];
+
+const doors=[
+  {r:1,c:13,rev:false,exp:0},
+  {r:12,c:13,rev:false,exp:0},
+  {r:2,c:13,rev:false,exp:0}
+];
+
+// Enemy class and Ray class as before...
+
+// [Insert Enemy and Ray class definitions along with game loop identical to eco_with_enemies_fixed]
+
+</script>
+</body>
+</html>

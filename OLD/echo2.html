@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eco no Corredor</title>
+  <style>
+    body { margin: 0; background: #000; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+  <script src="sounds.js"></script>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+// === CONFIGURAÇÕES ===
+const WALK_SPEED = 600;
+const RUN_SPEED = 400;
+
+const WALK_STEP = 1;
+const RUN_STEP = 2;
+
+const RUN_THRESHOLD = 1300;
+
+const ECHO_COLOR_1 = [80,80,80,1]; 
+const ECHO_COLOR_2 = [200,200,200,1]; 
+const CLAP_COLOR   = [255,255,255,0.8]; 
+
+const ECHO_LINE_COUNT = 24;
+const ECHO_LINE_WIDTH = 2;
+const ECHO_DURATION_1 = 900; 
+const ECHO_DURATION_2 = 1500; 
+const ECHO_EXPANSION_SPEED = 2;
+
+const CLAP_LINE_COUNT = 48;       // Mais linhas
+const CLAP_ECHO_DURATION = 10000; // Duração mais longa
+const CLAP_ECHO_BOUNCES = 3;      // Mais reflexões
+const CLAP_COOLDOWN = 30000;      // 30 segundos entre cada clap
+const CLAP_EXPANSION_SPEED = 4;   // Expande mais rápido
+
+//const WALL_COLOR = "rgb(100, 100, 100)";
+const WALL_COLOR = "rgb(0, 0, 0)";
+const DOOR_COLOR = "rgba(0, 255, 0, 0.9)";
+
+// === CANVAS ===
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// === CORREDOR ===
+const corridorWidth = canvas.width * 1.5;
+
+// === PAREDES ===
+const walls = [
+  // Parede superior
+  [
+    { x: 0, y: 0 }, // Parte do zero
+    { x: corridorWidth, y: 0 }, // Vai até o topo à direita
+    { x: corridorWidth, y: canvas.height / 2 - 50 }, // na direita, desce até metade -50
+    { x: (corridorWidth / 4) * 3, y: canvas.height / 2 - 50 }, // vem pro 3/4 do mapa mas permanece na metade -50        
+    { x: (corridorWidth / 4) * 3, y: canvas.height / 2 - 150 }, // permanece no 3/4 do mapa e vai a metade -150    
+    { x: corridorWidth / 4, y: canvas.height / 2 - 150 }, // vai a 1/4 do mapa e permanece na metade -150    
+    { x: corridorWidth / 4, y: canvas.height / 2 - 50 }, // no 1/4 do mapa vai até a metade - 50
+    { x: 0, y: canvas.height / 2 - 50 } // fecha bo zero x, mas ainda está na metade -50
+    // Ao fechar vai ao zero
+  ],
+  // Parede inferior
+  [
+    { x: 0, y: canvas.height / 2 + 50 }, // Parte do zero e metade + 50
+    { x: corridorWidth / 4, y: canvas.height / 2 + 50 }, //vai até 1/4 do mapa mas permanece na metade + 50 
+    { x: corridorWidth / 4, y: canvas.height / 2 + 150 }, //em 1/4 do mapa desce até metade +150     
+    { x: (corridorWidth / 4) * 3, y: canvas.height / 2 + 150 }, //vai a 3/4 do mapa mas permanece na metade +150 
+    { x: (corridorWidth / 4) * 3, y: canvas.height / 2 + 50 }, //em 3/4 do mapa desce até a metade +50     
+    { x: corridorWidth, y: canvas.height / 2 + 50 }, //vai até à direita mas permanece em metade +50
+    { x: corridorWidth, y: canvas.height }, // Na direita, desce até o ponto mais baixo
+    { x: 0, y: canvas.height } // Volta para esquerda no ponto mais baixo
+    // Ao fechar vai ao zero e metade + 50
+  ]
+];
+
+// === PORTA ===
+const exitDoor = {
+  x: corridorWidth - 5,
+  y: canvas.height / 2 - 50,
+  width: 5,
+  height: 100,
+  visible: false,
+  touchingLines: 0
+};
+
+// === SISTEMA DE COLISÃO ===
+function pointInPolygon(px, py, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+
+    const intersect = ((yi > py) !== (yj > py)) &&
+      (px < (xj - xi) * (py - yi) / (yj - yi + 0.0001) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function isColliding(x, y) {
+  for (const wall of walls) {
+    if (pointInPolygon(x, y, wall)) return true;
+  }
+  return false;
+}
+
+function segmentsIntersect(p1, p2, q1, q2) {
+  const det = (p2.x - p1.x) * (q2.y - q1.y) - (p2.y - p1.y) * (q2.x - q1.x);
+  if (det === 0) return false; // paralelos
+
+  const lambda = ((q2.y - q1.y) * (q2.x - p1.x) + (q1.x - q2.x) * (q2.y - p1.y)) / det;
+  const gamma = ((p1.y - p2.y) * (q2.x - p1.x) + (p2.x - p1.x) * (q2.y - p1.y)) / det;
+
+  return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+}
+
+// === PERSONAGEM ===
+const player = {
+  x: 0,
+  y: canvas.height / 2,
+  speed: WALK_SPEED,
+  lastStepX: 0,
+  lastStepY: 0,
+  wasIdle: true,
+  forceNextStep: false,
+  lastEcho: Date.now()
+};
+
+// === CÂMERA ===
+const camera = { x: 0 };
+
+// === TECLAS ===
+const keys = {};
+const keyPressTimes = {};
+
+// === MOUSE ===
+let mouseTarget = null;
+let isMousePressed = false;
+let mousePressStart = 0;
+
+// === ClAP ===
+let lastClapTime = 0;
+
+
+// === LINHAS DE ECO ===
+const lines = [];
+
+class EchoLine {
+  constructor(x, y, angle, type, bounces = 3) {
+    this.type = type;
+    this.isRunning = (type == 'run');
+    this.x = x;
+    this.y = y;
+    this.angle = angle;
+    this.bounces = bounces;
+    this.createdAt = Date.now();
+    this.doorTouched = false;
+    if (this.type == 'clap') {       
+      this.duration = CLAP_ECHO_DURATION;
+      this.color = CLAP_COLOR;
+    } else {
+      this.duration = (this.isRunning ? ECHO_DURATION_2 : ECHO_DURATION_1);
+      this.color = (this.isRunning ? ECHO_COLOR_2 : ECHO_COLOR_1)
+    }
+    this.path = [{ x, y }];
+  }
+
+  update() {
+    if (this.bounces < 0) return;
+
+    const age = Date.now() - this.createdAt;
+    const progress = Math.min(1, age / this.duration);
+    const dynamicSpeed = (this.type == 'clap' ? CLAP_EXPANSION_SPEED : ECHO_EXPANSION_SPEED) * (1 - progress * 0.5);
+
+    const dx = Math.cos(this.angle) * dynamicSpeed;
+    const dy = Math.sin(this.angle) * dynamicSpeed;
+
+    const nextX = this.x + dx;
+    const nextY = this.y + dy;
+
+    let collided = false;
+
+    for (const poly of walls) {
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+
+        if (segmentsIntersect({ x: this.x, y: this.y }, { x: nextX, y: nextY }, a, b)) {
+          collided = true;
+
+          // --- Calcular ponto de colisão exato (interpolado)
+          // Refletir corretamente com base na normal
+          const isHorizontal = Math.abs(a.y - b.y) < Math.abs(a.x - b.x);
+          if (isHorizontal) {
+            this.angle = -this.angle;
+          } else {
+            this.angle = Math.PI - this.angle;
+          }
+
+          this.bounces--;
+
+          return; // interrompe o movimento neste frame
+        }
+      }
+    }
+
+    // Se não colidiu, então move
+    this.x = nextX;
+    this.y = nextY;
+
+    if (!this.doorTouched) {
+      // Checa se passou pela porta
+      if (
+        this.x >= exitDoor.x &&
+        this.x <= exitDoor.x + exitDoor.width &&
+        this.y >= exitDoor.y &&
+        this.y <= exitDoor.y + exitDoor.height
+      ) {
+        this.doorTouched = true;
+        exitDoor.touchingLines++;
+      }
+    }
+
+    exitDoor.visible = exitDoor.touchingLines > 0;
+
+    this.path.push({ x: this.x, y: this.y });
+  }
+
+
+  draw(ctx, offsetX) {
+    const age = Date.now() - this.createdAt;
+    const alpha = Math.max(0, 1 - age / this.duration);
+    if (alpha <= 0) return;
+
+    ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
+    ctx.lineWidth = ECHO_LINE_WIDTH;
+    ctx.beginPath();
+    ctx.moveTo(this.path[0].x - offsetX, this.path[0].y);
+    for (let i = 1; i < this.path.length; i++) {
+      ctx.lineTo(this.path[i].x - offsetX, this.path[i].y);
+    }
+    ctx.stroke();
+  }
+
+  isDead() {
+    return Date.now() - this.createdAt > this.duration;
+  }
+}
+
+function emitEcho(x = player.x, y = player.y, type = 'walk') {
+  var lineCount = (type == 'clap' ? CLAP_LINE_COUNT : ECHO_LINE_COUNT);
+  for (let i = 0; i < lineCount; i++) {
+    const angle = (Math.PI * 2 / lineCount) * i;
+    lines.push(new EchoLine(x, y, angle, type, (type == 'clap' ? CLAP_ECHO_BOUNCES : 3)));
+  }
+}
+
+// === EVENTOS ===
+window.addEventListener("keydown", (e) => {
+  if (!(e.key in keys)) {
+    keyPressTimes[e.key] = Date.now();
+  }
+  keys[e.key] = true;
+});
+
+
+window.addEventListener("keyup", (e) => {
+  delete keys[e.key];
+  delete keyPressTimes[e.key];
+
+  // Se todas as teclas de movimento foram soltas
+  if (!keys["w"] && !keys["a"] && !keys["s"] && !keys["d"] &&
+      !keys["W"] && !keys["A"] && !keys["S"] && !keys["D"]) {
+    player.wasIdle = true;
+    player.forceNextStep = true;
+  }
+
+  //Se apertou "space"
+  if (e.code === 'Space') {
+    const now = Date.now();
+    if (now - lastClapTime >= CLAP_COOLDOWN) {
+      lastClapTime = now;
+      emitEcho(player.x, player.y, 'clap');
+      playClapSound();
+    }
+  }
+});
+
+window.addEventListener("mousedown", () => {
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+});
+
+canvas.addEventListener("mousedown", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX + camera.x - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  mouseTarget = { x: mouseX, y: mouseY };
+  isMousePressed = true;
+  mousePressStart = Date.now();
+});
+
+canvas.addEventListener("mouseup", () => {
+  isMousePressed = false;
+  mouseTarget = null;
+  player.wasIdle = true;
+  player.forceNextStep = true;
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (isMousePressed) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX + camera.x - rect.left;
+    const mouseY = e.clientY - rect.top;
+    mouseTarget = { x: mouseX, y: mouseY };
+  }
+});
+
+// === MOVIMENTO DE PERSEGUIR O CURSOR ===
+function moveTowardMouse(stepdistance) {
+  if (!mouseTarget) return;
+
+  const dx = mouseTarget.x - player.x;
+  const dy = mouseTarget.y - player.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < stepdistance) return;
+
+  const nx = dx / dist;
+  const ny = dy / dist;
+
+  const nextX = player.x + nx * stepdistance;
+  const nextY = player.y + ny * stepdistance;
+
+  if (!isColliding(nextX, player.y)) player.x = nextX;
+  if (!isColliding(player.x, nextY)) player.y = nextY;
+}
+
+// === MOVIMENTO ===
+function handleMovement() {
+  const now = Date.now();
+  const millisecondsDifference = now - player.lastEcho;
+
+  let maxHeld = 0;
+  let isRunning = false;
+  
+  if (isMousePressed) {
+    if (!player.wasIdle && (now - mousePressStart > RUN_THRESHOLD))
+      isRunning = true;
+  }
+  else {
+    for (const key in keyPressTimes) {
+      const held = now - keyPressTimes[key];
+      if (held > maxHeld) maxHeld = held;
+      if (held > RUN_THRESHOLD && !player.wasIdle) isRunning = true;      
+    }
+  }
+
+  player.speed = isRunning ? RUN_SPEED : WALK_SPEED;  
+
+  const prevX = player.x;
+  const prevY = player.y;
+
+  const stepdistance = isRunning ? RUN_STEP : WALK_STEP;
+
+  let moved = false;
+
+  if (isMousePressed)
+    moveTowardMouse(stepdistance);
+  else {
+    if (keys["d"] || keys["D"]) {
+      const tryX = player.x + stepdistance;
+      if (!isColliding(tryX, player.y)) player.x = tryX;
+    }
+    if (keys["a"] || keys["A"]) {
+      const tryX = player.x - stepdistance;
+      if (!isColliding(tryX, player.y)) player.x = tryX;
+    }
+    if (keys["w"] || keys["W"]) {
+      const tryY = player.y - stepdistance;
+      if (!isColliding(player.x, tryY)) player.y = tryY;
+    }
+    if (keys["s"] || keys["S"]) {
+      const tryY = player.y + stepdistance;
+      if (!isColliding(player.x, tryY)) player.y = tryY;
+    }
+
+    const dx = Math.abs(player.x - player.lastStepX);
+    const dy = Math.abs(player.y - player.lastStepY);    
+  }
+  moved = player.x !== prevX || player.y !== prevY;
+
+  if (moved) {            
+    if ((millisecondsDifference >= player.speed) || (player.forceNextStep)) {
+      player.lastEcho = now;
+      player.forceNextStep = false;
+      emitEcho(player.x, player.y, (isRunning ? 'run' : 'walk'));
+      playStepSound(isRunning);        
+    }
+    player.lastStepX = player.x;
+    player.lastStepY = player.y;
+  }
+  
+  player.wasIdle = !moved && Object.keys(keys).length === 0 && !isMousePressed;    
+
+  const centerStart = canvas.width / 2;
+  const centerEnd = corridorWidth - canvas.width / 2;
+  if (player.x < centerStart) {
+    camera.x = 0;
+  } else if (player.x > centerEnd) {
+    camera.x = corridorWidth - canvas.width;
+  } else {
+    camera.x = player.x - canvas.width / 2;
+  }
+
+  if (
+    player.x >= exitDoor.x &&
+    player.x <= exitDoor.x + exitDoor.width &&
+    player.y >= exitDoor.y &&
+    player.y <= exitDoor.y + exitDoor.height
+  ) {
+    alert("Fase concluída!");
+    location.reload();
+  }
+}
+
+
+// === ANIMAÇÃO E DESENHO ===
+function drawWalls(offsetX) {
+  ctx.fillStyle = WALL_COLOR;
+
+  for (const wall of walls) {
+    ctx.beginPath();
+    const start = wall[0];
+    ctx.moveTo(start.x - offsetX, start.y);
+    for (let i = 1; i < wall.length; i++) {
+      ctx.lineTo(wall[i].x - offsetX, wall[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawExitDoor(offsetX) {
+  if (!exitDoor.visible) return;
+  ctx.fillStyle = DOOR_COLOR;
+  ctx.fillRect(exitDoor.x - offsetX, exitDoor.y, exitDoor.width, exitDoor.height);
+}
+
+function drawLines(offsetX) {
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i];
+    line.update();
+    line.draw(ctx, offsetX);
+    if (line.isDead()) {
+      if (line.doorTouched == true && exitDoor.touchingLines > 0)
+        exitDoor.touchingLines--;  
+      lines.splice(i, 1);
+    }
+    exitDoor.visible = (exitDoor.touchingLines > 0);
+  }
+}
+
+function animate() {
+  ctx.fillStyle = "rgb(0, 0, 0)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawWalls(camera.x);  
+  drawExitDoor(camera.x);
+  handleMovement();
+  drawLines(camera.x);  
+  requestAnimationFrame(animate);
+}
+
+// === INICIAR ===
+emitEcho();
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eco Labirinto - Fases</title>
+  <style>
+    /* Reset e estilo básico */
+    body { margin: 0; background: black; color: white; font-family: sans-serif; }
+    #header {
+      position: fixed; top: 0; left: 0; width: 100%;
+      background: #222; padding: 5px; z-index: 10;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #header div { margin: 0 10px; }
+    #tips {
+      position: fixed; top: 40px; left: 0; width: 100%;
+      text-align: center; font-size: 14px; z-index: 10;
+    }
+    #gameCanvas {
+      display: block; margin-top: 70px; background: black;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header fixo com informações de jogo -->
+  <div id="header">
+    <div id="phase">Fase: 1</div>
+    <div id="powerup">Powerup: Pronto</div>
+    <div id="lives">Vidas: ♥♥♥</div>
+  </div>
+  <!-- Dicas para o jogador -->
+  <div id="tips">Ande para gerar seu eco e encontrar a saída verde.</div>
+  <!-- Canvas onde o jogo é desenhado -->
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    // Referências ao canvas e contexto
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Quantidade de linhas e colunas
+    let TILE, ROWS = 15, COLS = 15;
+
+    // Ajusta tamanho do canvas e recalcula TILE
+    function resize(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - 70; // espaço para header
+      TILE = canvas.height / ROWS;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Mapas das fases
+    const maps = [
+      // Fase 1: corredor reto na linha 1
+      Array.from({length: ROWS}, (_, r) =>
+        r === 1
+          ? [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1]
+          : Array(ROWS).fill(1)
+      ),
+      // Fase 2: labirinto mais complexo
+      [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,1,1,1,1,1,0,1],
+        [1,0,1,1,0,1,0,1,1,1,0,1,1,0,1],
+        [1,0,1,0,0,1,0,0,0,1,0,0,1,0,1],
+        [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+        [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+        [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+        [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+        [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      ]
+    ];
+
+    // Portas de saída por fase
+    const doors = [
+      {r:1, c:13, revealed:false, expire:0},
+      {r:12, c:13, revealed:false, expire:0}
+    ];
+
+    // Estado do jogo
+    let phase = 0, lives = 3;
+    let player = { x: TILE*1.5, y: TILE*1.5, speed: 2 };
+    let rays = [], keys = {};
+
+    // Temporizadores
+    let lastStep = 0, stepInterval = 200;
+    let lastClap = 0, clapCooldown = 5000;
+
+    // Sons de passo e palmas
+    const stepSound = new Audio('step1.mp3');
+    const clapSound = new Audio('clap1.mp3');
+    stepSound.volume = 0.3;
+    clapSound.volume = 0.5;
+
+    // Elementos de texto
+    const phaseText = document.getElementById('phase');
+    const puText = document.getElementById('powerup');
+    const livesText = document.getElementById('lives');
+    const tips = document.getElementById('tips');
+
+    // Captura de teclas
+    document.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.code === 'Space') triggerClap();
+    });
+    document.addEventListener('keyup', e => {
+      keys[e.key.toLowerCase()] = false;
+      // Para o som de passo ao soltar todas as teclas de movimento
+      if (!keys['w'] && !keys['a'] && !keys['s'] && !keys['d']) {
+        stepSound.pause();
+        stepSound.currentTime = 0;
+      }
+    });
+
+    // Classe Ray com distinção de decay para step/clap
+    class Ray {
+      constructor(x,y,angle,intensity,life=100,bounces=5,type='step'){
+        this.x = x; this.y = y;
+        this.dx = Math.cos(angle); this.dy = Math.sin(angle);
+        this.int = intensity; this.life = life;
+        this.bounces = bounces; this.type = type;
+        this.path = [{x,y}];
+      }
+      update() {
+        if (this.life <= 0 || this.int < 0.01) return false;
+        const step = 2;
+        const nx = this.x + this.dx*step, ny = this.y + this.dy*step;
+        const tx = Math.floor(nx/TILE), ty = Math.floor(ny/TILE);
+
+        // Fora do mapa
+        if (tx<0||ty<0||tx>=COLS||ty>=ROWS) { this.life=0; return false; }
+
+        // Colisão com parede
+        if (maps[phase][ty][tx] === 1) {
+          // Rebatidas separadas X e Y
+          const bx = maps[phase][Math.floor(this.y/TILE)]
+                            [Math.floor((this.x+this.dx*step)/TILE)] === 1;
+          const by = maps[phase][Math.floor((this.y+this.dy*step)/TILE)]
+                            [Math.floor(this.x/TILE)] === 1;
+          if (bx) this.dx *= -1;
+          if (by) this.dy *= -1;
+          if (!bx && !by) { this.dx *= -1; this.dy *= -1; }
+          this.int *= 0.75; this.bounces--;
+        } else {
+          // Movimento livre
+          this.x = nx; this.y = ny;
+        }
+
+        // Grava histórico de pontos para desenhar
+        this.path.push({x:this.x, y:this.y});
+        this.life--;
+
+        // Decaimento conforme tipo
+        if (this.type === 'clap') {
+          this.int *= 0.99;  // mais suave
+        } else {
+          this.int *= 0.985;
+        }
+
+        // Revela porta se atingida
+        const door = doors[phase];
+        if (tx === door.c && ty === door.r) {
+          door.revealed = true;
+          door.expire = performance.now() + 1000;
+        }
+        return true;
+      }
+      draw() {
+        if (this.path.length < 2) return;
+        ctx.strokeStyle = `rgba(0,255,255,${this.int})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(this.path[0].x, this.path[0].y);
+        for (const p of this.path) ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+    }
+
+    // Dispara eco de passo
+    function triggerStep() {
+      const now = performance.now();
+      if (now - lastStep < stepInterval) return;
+      lastStep = now;
+      for (let i = 0; i < 60; i++) {
+        const angle = (2*Math.PI/60)*i;
+        rays.push(new Ray(player.x, player.y, angle, 0.3, 100, 5, 'step'));
+      }
+      stepSound.currentTime = 0;
+      stepSound.play();
+    }
+
+    // Dispara eco de palmas com vida estendida
+    function triggerClap() {
+      const now = performance.now();
+      if (now - lastClap < clapCooldown) return;
+      lastClap = now;
+      puText.textContent = 'Powerup: Recarregando';
+      setTimeout(() => puText.textContent = 'Powerup: Pronto', clapCooldown);
+
+      for (let i = 0; i < 120; i++) {
+        const angle = (2*Math.PI/120)*i;
+        rays.push(new Ray(player.x, player.y, angle, 1, 500, 5, 'clap'));
+      }
+      clapSound.currentTime = 0;
+      clapSound.play();
+    }
+
+    // Verifica colisão do jogador com paredes
+    function isWalk(x,y) {
+      const pad = 6 - 1;
+      const l = Math.floor((x-pad)/TILE), r = Math.floor((x+pad)/TILE);
+      const t = Math.floor((y-pad)/TILE), b = Math.floor((y+pad)/TILE);
+      if (![l,r,t,b].every(idx=>idx>=0 && idx<COLS)) return false;
+      const m = maps[phase];
+      return m[t][l]===0 && m[t][r]===0 && m[b][l]===0 && m[b][r]===0;
+    }
+
+    // Movimento do jogador
+    function move() {
+      let moved = false;
+      if (keys['w']) { const ny = player.y - player.speed; if (isWalk(player.x,ny)) { player.y=ny; moved=true; } }
+      if (keys['s']) { const ny = player.y + player.speed; if (isWalk(player.x,ny)) { player.y=ny; moved=true; } }
+      if (keys['a']) { const nx = player.x - player.speed; if (isWalk(nx,player.y)) { player.x=nx; moved=true; } }
+      if (keys['d']) { const nx = player.x + player.speed; if (isWalk(nx,player.y)) { player.x=nx; moved=true; } }
+      if (moved) triggerStep();
+    }
+
+    // Loop de atualização
+    function update() {
+      move();
+      rays = rays.filter(r => r.update());
+
+      // Expira a porta
+      const door = doors[phase];
+      if (door.revealed && performance.now() > door.expire) {
+        door.revealed = false;
+      }
+
+      // Checa chegada à saída
+      if (door.revealed) {
+        const pr = Math.floor(player.y/TILE), pc = Math.floor(player.x/TILE);
+        if (pr===door.r && pc===door.c) {
+          phase++;
+          if (phase >= maps.length) {
+            tips.textContent = 'Parabéns, fim do jogo!';
+            return;
+          }
+          // Ajusta estados para nova fase
+          phaseText.textContent = 'Fase: ' + (phase+1);
+          puText.textContent = 'Powerup: Pronto';
+          rays = [];
+          player.x = TILE*1.5; player.y = TILE*1.5;
+          doors[phase].revealed = false;
+          tips.textContent = phase===1 ?
+            'Use Palmas (Space) para eco poderoso e revelar corredores.' :
+            'Ande para gerar eco e encontrar a saída verde.';
+        }
+      }
+    }
+
+    // Desenha tudo no canvas
+    function draw() {
+      ctx.fillStyle='black';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      for (const r of rays) r.draw();
+
+      // Porta de saída verde centralizada
+      const door = doors[phase];
+      if (door.revealed) {
+        ctx.fillStyle='green';
+        ctx.fillRect(
+          door.c * TILE + TILE*0.25,
+          door.r * TILE + TILE*0.25,
+          TILE*0.5,
+          TILE*0.5
+        );
+      }
+    }
+
+    // Loop principal
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>

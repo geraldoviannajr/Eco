@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Eco com Ricochete e Movimento</title>
+  <style>
+    body { margin: 0; background: black; }
+    canvas { display: block; background: black; }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="600"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const TILE_SIZE = 40;
+const ROWS = canvas.height / TILE_SIZE;
+const COLS = canvas.width / TILE_SIZE;
+
+const map = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,0,1,0,1,1,1,0,1,1,0,1],
+  [1,0,1,0,0,1,0,0,0,1,0,0,1,0,1],
+  [1,0,1,0,1,1,1,0,1,1,1,0,1,0,1],
+  [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+  [1,1,1,1,1,0,1,1,1,0,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,1,1,1,1,1,1,1,1,1,0,1],
+  [1,0,1,0,0,0,0,0,0,0,0,0,1,0,1],
+  [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1],
+  [1,0,1,0,0,0,0,0,0,0,1,0,1,0,1],
+  [1,0,1,1,1,1,1,1,1,0,1,1,1,0,1],
+  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+let player = {
+  x: TILE_SIZE * 1.5,
+  y: TILE_SIZE * 1.5,
+  radius: 6,
+  visibleTimer: 0,
+  speed: 2
+};
+
+let rays = [];
+let keys = {};
+
+let lastStepTime = 0;
+const stepInterval = 200;
+const stepSound = new Audio('step1.mp3');
+const soundStopTime = 600;
+
+stepSound.volume = 0.3;
+
+let lastMovementTime = performance.now();
+let isMoving = false;
+
+
+function triggerStepEcho() {
+  const numRays = 60;
+  for (let i = 0; i < numRays; i++) {
+    const angle = (Math.PI * 2 / numRays) * i;
+    rays.push(new Ray(player.x, player.y, angle, 0.3));
+  }
+
+  // Tocar som de passo
+  if (stepSound.paused || stepSound.ended) {
+    stepSound.currentTime = 0;
+    stepSound.play();
+  } else {
+    const s = new Audio('step.wav'); // criar uma nova instância para sobrepor
+    s.volume = 0.3;
+    s.play();
+  }
+}
+
+
+
+class Ray {
+  constructor(x, y, angle, intensity = 1, maxBounces = 5) {
+    this.x = x;
+    this.y = y;
+    this.dx = Math.cos(angle);
+    this.dy = Math.sin(angle);
+    this.intensity = intensity;
+    this.bounces = maxBounces;
+    this.path = [{ x, y }];
+    this.life = 100;
+  }
+
+  update() {
+    if (this.intensity < 0.01 || this.life <= 0 || this.bounces < 0) return false;
+
+    const step = 2;
+    let nextX = this.x + this.dx * step;
+    let nextY = this.y + this.dy * step;
+
+    const tileX = Math.floor(nextX / TILE_SIZE);
+    const tileY = Math.floor(nextY / TILE_SIZE);
+
+    if (tileX < 0 || tileY < 0 || tileX >= COLS || tileY >= ROWS) {
+      this.life = 0;
+      return false;
+    }
+
+    if (map[tileY][tileX] === 1) {
+      const canBounceX = map[Math.floor(this.y / TILE_SIZE)][Math.floor((this.x + this.dx * step) / TILE_SIZE)] === 1;
+      const canBounceY = map[Math.floor((this.y + this.dy * step) / TILE_SIZE)][Math.floor(this.x / TILE_SIZE)] === 1;
+
+      if (canBounceX) this.dx *= -1;
+      if (canBounceY) this.dy *= -1;
+
+      if (!canBounceX && !canBounceY) {
+        this.dx *= -1;
+        this.dy *= -1;
+      }
+
+      this.intensity *= 0.75;
+      this.bounces--;
+    } else {
+      this.x = nextX;
+      this.y = nextY;
+    }
+
+    this.path.push({ x: this.x, y: this.y });
+    this.life--;
+    this.intensity *= 0.985;
+
+    return true;
+  }
+
+  draw(ctx) {
+    if (this.path.length < 2 || this.intensity <= 0 || this.life <= 0) return;
+
+    ctx.strokeStyle = `rgba(0, 255, 255, ${this.intensity})`;
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(this.path[0].x, this.path[0].y);
+    for (let i = 1; i < this.path.length; i++) {
+      ctx.lineTo(this.path[i].x, this.path[i].y);
+    }
+    ctx.stroke();
+  }
+}
+
+function triggerEcho() {
+  const numRays = 80;
+  for (let i = 0; i < numRays; i++) {
+    const angle = (Math.PI * 2 / numRays) * i;
+    rays.push(new Ray(player.x, player.y, angle));
+  }
+}
+
+function isWalkable(x, y) {
+  const padding = player.radius - 1; // margem de segurança
+  const left = Math.floor((x - padding) / TILE_SIZE);
+  const right = Math.floor((x + padding) / TILE_SIZE);
+  const top = Math.floor((y - padding) / TILE_SIZE);
+  const bottom = Math.floor((y + padding) / TILE_SIZE);
+
+  return (
+    map[top]?.[left] === 0 &&
+    map[top]?.[right] === 0 &&
+    map[bottom]?.[left] === 0 &&
+    map[bottom]?.[right] === 0
+  );
+}
+
+function movePlayer() {
+  let moved = false;
+
+  if (keys['w']) {
+    const newY = player.y - player.speed;
+    if (isWalkable(player.x, newY)) {
+      player.y = newY;
+    }
+    moved = true;
+  }
+  if (keys['s']) {
+    const newY = player.y + player.speed;
+    if (isWalkable(player.x, newY)) {
+      player.y = newY;
+    }
+    moved = true;
+  }
+  if (keys['a']) {
+    const newX = player.x - player.speed;
+    if (isWalkable(newX, player.y)) {
+      player.x = newX;
+    }
+    moved = true;
+  }
+  if (keys['d']) {
+    const newX = player.x + player.speed;
+    if (isWalkable(newX, player.y)) {
+      player.x = newX;
+    }
+    moved = true;
+  }
+
+  // Sempre que tentou mover, reseta o timer
+  if (moved) {
+    player.visibleTimer = 5;
+
+    const now = performance.now();
+    isMoving = true;
+    lastMovementTime = now;
+
+    if (now - lastStepTime > stepInterval) {
+      triggerStepEcho();
+      lastStepTime = now;
+    }
+  } else {
+    isMoving = false;
+    if (player.visibleTimer > 0) player.visibleTimer--; 
+  }
+}
+
+function update() {
+  movePlayer();
+
+  const now = performance.now();
+  if (!isMoving && now - lastMovementTime > soundStopTime) {
+    if (!stepSound.paused) {
+      stepSound.pause();
+      stepSound.currentTime = 0;
+    } 
+  }
+
+  for (let ray of rays) {
+    ray.update();
+  }
+
+  rays = rays.filter(r => r.intensity > 0.01 && r.life > 0);
+}
+
+function drawPlayer() {
+  if (player.visibleTimer > 0) {
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function draw() {
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let ray of rays) {
+    ray.draw(ctx);
+  }
+
+  drawPlayer();
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+document.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+
+  if (e.code === 'Space') {
+    triggerEcho();
+  }
+});
+
+document.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+gameLoop();
+</script>
+</body>
+</html>
