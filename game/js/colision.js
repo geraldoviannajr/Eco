@@ -1,4 +1,17 @@
 // === SISTEMA DE COLISÃO ===
+/**
+ * Verifica se um ponto (x, y) está dentro de um círculo.
+ * @param {number} x - Coordenada x do ponto.
+ * @param {number} y - Coordenada y do ponto.
+ * @param {{x: number, y: number, radius: number}} circle - Objeto círculo com x, y e radius.
+ * @returns {boolean} true se o ponto está dentro do círculo.
+ */
+function pointInCircle(x, y, circle) {
+  const dx = x - circle.x;
+  const dy = y - circle.y;
+  return (dx * dx + dy * dy) <= (circle.radius * circle.radius);
+}
+
 function pointInPolygon(px, py, polygon) {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -12,7 +25,7 @@ function pointInPolygon(px, py, polygon) {
   return inside;
 }
 
-function isColliding(x, y, radius = 0) {
+function isWallColliding(x, y, radius = 0) {
   if (radius === 0) {
     // Colisão pontual (original)
     for (const wall of walls) {
@@ -34,6 +47,12 @@ function isColliding(x, y, radius = 0) {
     return false;
   }
 }
+
+function isPlayerColliding(_x, _y, _radius = 0) {
+  return pointInCircle(player.x, player.y, {x: _x, y: _y,radius: _radius});
+}
+
+
 
 function segmentsIntersect(p1, p2, q1, q2) {
   const det = (p2.x - p1.x) * (q2.y - q1.y) - (p2.y - p1.y) * (q2.x - q1.x);

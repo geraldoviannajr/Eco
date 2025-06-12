@@ -13,8 +13,8 @@ function moveTowardMouse(stepdistance) {
   const nextX = player.x + nx * stepdistance;
   const nextY = player.y + ny * stepdistance;
 
-  if (!isColliding(nextX, player.y)) player.x = nextX;
-  if (!isColliding(player.x, nextY)) player.y = nextY;
+  if (!isWallColliding(nextX, player.y)) player.x = nextX;
+  if (!isWallColliding(player.x, nextY)) player.y = nextY;
 }
 
 // === MOVIMENTO DO PLAYER ===
@@ -51,19 +51,19 @@ function handleMovement() {
   else {
     if (keys["d"] || keys["D"]) {
       const tryX = player.x + stepdistance;
-      if (!isColliding(tryX, player.y)) player.x = tryX;
+      if (!isWallColliding(tryX, player.y)) player.x = tryX;
     }
     if (keys["a"] || keys["A"]) {
       const tryX = player.x - stepdistance;
-      if (!isColliding(tryX, player.y)) player.x = tryX;
+      if (!isWallColliding(tryX, player.y)) player.x = tryX;
     }
     if (keys["w"] || keys["W"]) {
       const tryY = player.y - stepdistance;
-      if (!isColliding(player.x, tryY)) player.y = tryY;
+      if (!isWallColliding(player.x, tryY)) player.y = tryY;
     }
     if (keys["s"] || keys["S"]) {
       const tryY = player.y + stepdistance;
-      if (!isColliding(player.x, tryY)) player.y = tryY;
+      if (!isWallColliding(player.x, tryY)) player.y = tryY;
     }
 
     const dx = Math.abs(player.x - player.lastStepX);

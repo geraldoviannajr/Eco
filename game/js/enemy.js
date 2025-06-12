@@ -38,8 +38,8 @@ class Enemy {
         const ny = dy / dist;
         const nextX = this.x + nx * this.speed;
         const nextY = this.y + ny * this.speed;
-        if (!isColliding(nextX, this.y, this.size + 10)) this.x = nextX;
-        if (!isColliding(this.x, nextY, this.size + 10)) this.y = nextY;
+        if (!isWallColliding(nextX, this.y, this.size + 10)) this.x = nextX;
+        if (!isWallColliding(this.x, nextY, this.size + 10)) this.y = nextY;
 
         let moved = player.x !== prevX || player.y !== prevY;
 
@@ -51,8 +51,8 @@ class Enemy {
                 //playStepSound(false);
             }
         }
-
-        if (dist < (this.size / 2) + 2) {
+        
+        if (isPlayerColliding(this.x, this.y, (this.size / 2) + 10)) {
             alert("Você foi alcançado por um inimigo. Fim de jogo.");
             location.reload();
         }
