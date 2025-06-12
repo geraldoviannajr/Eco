@@ -1,4 +1,3 @@
-
 // === LINHAS DE ECO ===
 const lines = [];
 
@@ -20,6 +19,7 @@ function emitEnemyEcho(enemy) {
 }
 
 class EchoLine {
+  // Tipo de eco: 'walk', 'run', 'clap', 'enemy'
   constructor(x, y, angle, type, _enemy = null, bounces = 3) {
     this.type = type;
     this.isRunning = (type == 'run');
@@ -48,6 +48,8 @@ class EchoLine {
     this.path = [{ x, y }];
   }
 
+  // Atualiza a linha de eco
+  // Move a linha de eco, verifica colisões e atualiza o estado
   update() {
     if (this.bounces < 0) return;
 
@@ -111,7 +113,12 @@ class EchoLine {
         const dx = this.x - enemy.x;
         const dy = this.y - enemy.y;
         const dist = Math.hypot(dx, dy);
-        if (dist <= enemy.size) {
+        const buffer = 5;
+        if (
+          dist >= (enemy.size - buffer) && // fora do centro
+          dist <= (enemy.size + buffer) && // dentro da borda/perímetro
+          !this.enemiesTouched.includes(enemy)
+        ) {
           this.enemiesTouched.push(enemy);
           enemy.visible = true;
           enemy.chasing = true;
@@ -123,13 +130,19 @@ class EchoLine {
     this.path.push({ x: this.x, y: this.y });
   }
 
-
+  // Desenha a linha de eco
+  // Se for um inimigo, usa a cor do inimigo
   draw(ctx, offsetX) {
     const age = Date.now() - this.createdAt;
     const alpha = Math.max(0, 1 - age / this.duration);
     if (alpha <= 0) return;
 
-    ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
+    if (this.type != 'enemy' && this.enemiesTouched.length > 0) {
+      ctx.fillStyle = this.enemiesTouched[0].bodyColor;
+    } else {
+      ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
+    }
+
     ctx.lineWidth = ECHO_LINE_WIDTH;
     ctx.beginPath();
     ctx.moveTo(this.path[0].x - offsetX, this.path[0].y);
@@ -139,6 +152,7 @@ class EchoLine {
     ctx.stroke();
   }
 
+  // Verifica se a linha de eco está morta
   isDead() {
     return Date.now() - this.createdAt > this.duration;
   }

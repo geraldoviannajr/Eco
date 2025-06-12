@@ -35,3 +35,21 @@ const exitDoor = {
   visible: false,
   touchingLines: 0
 };
+
+// === INIMIGOS ===
+const enemies = [
+  new Enemy(canvas.width * 0.50, canvas.height / 2, 'echo', 10, 0.4),
+  new Enemy(canvas.width * 0.75, canvas.height / 2, 'radar', 120, 0.2)
+];
+  
+// Propriedades específicas dos inimigo
+enemies[0].detectionCoolDown = 3000;
+enemies[0].expansionSpeed = 4;
+enemies[0].lineCount= 24;
+
+enemies[1].waveCount = 90;
+enemies[1].waveAmplitude = 2;
+enemies[1].bodyColor = `rgba(0,0,0,1)`;
+enemies[1].echoColor = [255,0,0,0.8];
+enemies[1].expansionSpeed = 4;
+enemies[1].lineCount= 36;
