@@ -36,3 +36,5 @@ canvas.height = window.innerHeight;
 
 // === CORREDOR ===
 const corridorWidth = canvas.width * 1.5;
+
+

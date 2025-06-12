@@ -137,11 +137,11 @@ class EchoLine {
     const alpha = Math.max(0, 1 - age / this.duration);
     if (alpha <= 0) return;
 
-    if (this.type != 'enemy' && this.enemiesTouched.length > 0) {
+    /*if (this.type != 'enemy' && this.enemiesTouched.length > 0) {
       ctx.fillStyle = this.enemiesTouched[0].bodyColor;
-    } else {
+    } else {*/
       ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
-    }
+    //
 
     ctx.lineWidth = ECHO_LINE_WIDTH;
     ctx.beginPath();

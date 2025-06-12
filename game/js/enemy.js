@@ -52,7 +52,7 @@ class Enemy {
             }
         }
 
-        if (dist < 10) {
+        if (dist < (this.size / 2) + 2) {
             alert("Você foi alcançado por um inimigo. Fim de jogo.");
             location.reload();
         }
