@@ -1,25 +1,21 @@
 // === SISTEMA DE COLISÃO ===
-/**
- * Verifica se um ponto (x, y) está dentro de um círculo.
- * @param {number} x - Coordenada x do ponto.
- * @param {number} y - Coordenada y do ponto.
- * @param {{x: number, y: number, radius: number}} circle - Objeto círculo com x, y e radius.
- * @returns {boolean} true se o ponto está dentro do círculo.
- */
 function pointInCircle(x, y, circle) {
   const dx = x - circle.x;
   const dy = y - circle.y;
-  return (dx * dx + dy * dy) <= (circle.radius * circle.radius);
+  return dx * dx + dy * dy <= circle.radius * circle.radius;
 }
 
 function pointInPolygon(px, py, polygon) {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x, yi = polygon[i].y;
-    const xj = polygon[j].x, yj = polygon[j].y;
+    const xi = polygon[i].x,
+      yi = polygon[i].y;
+    const xj = polygon[j].x,
+      yj = polygon[j].y;
 
-    const intersect = ((yi > py) !== (yj > py)) &&
-      (px < (xj - xi) * (py - yi) / (yj - yi + 0.0001) + xi);
+    const intersect =
+      yi > py !== yj > py &&
+      px < ((xj - xi) * (py - yi)) / (yj - yi + 0.0001) + xi;
     if (intersect) inside = !inside;
   }
   return inside;
@@ -28,7 +24,7 @@ function pointInPolygon(px, py, polygon) {
 function isWallColliding(x, y, radius = 0) {
   if (radius === 0) {
     // Colisão pontual (original)
-    for (const wall of walls) {
+    for (const wall of game.map.walls) {
       if (pointInPolygon(x, y, wall)) return true;
     }
     return false;
@@ -40,7 +36,7 @@ function isWallColliding(x, y, radius = 0) {
       const angle = (2 * Math.PI * i) / steps;
       const px = x + Math.cos(angle) * radius;
       const py = y + Math.sin(angle) * radius;
-      for (const wall of walls) {
+      for (const wall of game.map.walls) {
         if (pointInPolygon(px, py, wall)) return true;
       }
     }
@@ -49,17 +45,21 @@ function isWallColliding(x, y, radius = 0) {
 }
 
 function isPlayerColliding(_x, _y, _radius = 0) {
-  return pointInCircle(player.x, player.y, {x: _x, y: _y,radius: _radius});
+  return pointInCircle(game.player.x, game.player.y, {
+    x: _x,
+    y: _y,
+    radius: _radius,
+  });
 }
-
-
 
 function segmentsIntersect(p1, p2, q1, q2) {
   const det = (p2.x - p1.x) * (q2.y - q1.y) - (p2.y - p1.y) * (q2.x - q1.x);
   if (det === 0) return false; // paralelos
 
-  const lambda = ((q2.y - q1.y) * (q2.x - p1.x) + (q1.x - q2.x) * (q2.y - p1.y)) / det;
-  const gamma = ((p1.y - p2.y) * (q2.x - p1.x) + (p2.x - p1.x) * (q2.y - p1.y)) / det;
+  const lambda =
+    ((q2.y - q1.y) * (q2.x - p1.x) + (q1.x - q2.x) * (q2.y - p1.y)) / det;
+  const gamma =
+    ((p1.y - p2.y) * (q2.x - p1.x) + (p2.x - p1.x) * (q2.y - p1.y)) / det;
 
-  return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+  return 0 < lambda && lambda < 1 && 0 < gamma && gamma < 1;
 }

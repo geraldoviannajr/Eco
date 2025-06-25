@@ -1,20 +1,35 @@
 // === LINHAS DE ECO ===
-const lines = [];
-
-function emitEcho(x = player.x, y = player.y, type = 'walk') {
-  var lineCount = (type == 'clap' ? CLAP_LINE_COUNT : ECHO_LINE_COUNT);
+function emitEcho(x = game.player.x, y = game.player.y, type = "walk") {
+  var lineCount =
+    type == "clap" ? config.CLAP_LINE_COUNT : config.ECHO_LINE_COUNT;
   for (let i = 0; i < lineCount; i++) {
-    const angle = (Math.PI * 2 / lineCount) * i;
-    lines.push(new EchoLine(x, y, angle, type, null, (type == 'clap' ? CLAP_ECHO_BOUNCES : 3)));
+    const angle = ((Math.PI * 2) / lineCount) * i;
+    game.lines.push(
+      new EchoLine(
+        x,
+        y,
+        angle,
+        type,
+        null,
+        type == "clap" ? config.CLAP_ECHO_BOUNCES : 3
+      )
+    );
   }
 }
 
 function emitEnemyEcho(enemy) {
   for (let i = 0; i < enemy.lineCount; i++) {
-    const angle = (Math.PI * 2 / enemy.lineCount) * i;
-    lines.push(new EchoLine(enemy.x + Math.cos(angle) * (enemy.size + 10), 
-                            enemy.y + Math.sin(angle) * (enemy.size + 10), 
-                            angle, 'enemy', enemy, 3));
+    const angle = ((Math.PI * 2) / enemy.lineCount) * i;
+    game.lines.push(
+      new EchoLine(
+        enemy.x + Math.cos(angle) * (enemy.size + 10),
+        enemy.y + Math.sin(angle) * (enemy.size + 10),
+        angle,
+        "enemy",
+        enemy,
+        3
+      )
+    );
   }
 }
 
@@ -22,7 +37,7 @@ class EchoLine {
   // Tipo de eco: 'walk', 'run', 'clap', 'enemy'
   constructor(x, y, angle, type, _enemy = null, bounces = 3) {
     this.type = type;
-    this.isRunning = (type == 'run');
+    this.isRunning = type == "run";
     this.x = x;
     this.y = y;
     this.angle = angle;
@@ -32,18 +47,20 @@ class EchoLine {
     this.enemy = _enemy;
     this.enemiesTouched = [];
 
-    if (this.type == 'enemy' && this.enemy != null) {
+    if (this.type == "enemy" && this.enemy != null) {
       this.duration = this.enemy.duration;
       this.color = this.enemy.echoColor;
       this.expansionSpeed = this.enemy.expansionSpeed;
-    } else if (this.type == 'clap') {
-      this.duration = CLAP_ECHO_DURATION;
-      this.color = CLAP_COLOR;
-      this.expansionSpeed = CLAP_EXPANSION_SPEED;
+    } else if (this.type == "clap") {
+      this.duration = config.CLAP_ECHO_DURATION;
+      this.color = config.CLAP_COLOR;
+      this.expansionSpeed = config.CLAP_EXPANSION_SPEED;
     } else {
-      this.duration = (this.isRunning ? ECHO_DURATION_2 : ECHO_DURATION_1);
-      this.color = (this.isRunning ? ECHO_COLOR_2 : ECHO_COLOR_1);
-      this.expansionSpeed = ECHO_EXPANSION_SPEED;
+      this.duration = this.isRunning
+        ? config.ECHO_DURATION_2
+        : config.ECHO_DURATION_1;
+      this.color = this.isRunning ? config.ECHO_COLOR_2 : config.ECHO_COLOR_1;
+      this.expansionSpeed = config.ECHO_EXPANSION_SPEED;
     }
     this.path = [{ x, y }];
   }
@@ -65,12 +82,19 @@ class EchoLine {
 
     let collided = false;
 
-    for (const poly of walls) {
+    for (const poly of game.map.walls) {
       for (let i = 0; i < poly.length; i++) {
         const a = poly[i];
         const b = poly[(i + 1) % poly.length];
 
-        if (segmentsIntersect({ x: this.x, y: this.y }, { x: nextX, y: nextY }, a, b)) {
+        if (
+          segmentsIntersect(
+            { x: this.x, y: this.y },
+            { x: nextX, y: nextY },
+            a,
+            b
+          )
+        ) {
           collided = true;
 
           // --- Calcular ponto de colisão exato (interpolado)
@@ -96,27 +120,27 @@ class EchoLine {
     // Checa se passou pela porta para revelá-la
     if (!this.doorTouched) {
       if (
-        this.x >= exitDoor.x &&
-        this.x <= exitDoor.x + exitDoor.width &&
-        this.y >= exitDoor.y &&
-        this.y <= exitDoor.y + exitDoor.height
+        this.x >= game.map.exitDoor.x &&
+        this.x <= game.map.exitDoor.x + game.map.exitDoor.width &&
+        this.y >= game.map.exitDoor.y &&
+        this.y <= game.map.exitDoor.y + game.map.exitDoor.height
       ) {
         this.doorTouched = true;
-        exitDoor.touchingLines++;
+        game.map.exitDoor.touchingLines++;
       }
     }
-    exitDoor.visible = exitDoor.touchingLines > 0;
+    game.map.exitDoor.visible = game.map.exitDoor.touchingLines > 0;
 
     // Checa se tocou algum inimigo
-    if (this.type != 'enemy') {
-      for (const enemy of enemies) {
+    if (this.type != "enemy") {
+      for (const enemy of game.map.enemies) {
         const dx = this.x - enemy.x;
         const dy = this.y - enemy.y;
         const dist = Math.hypot(dx, dy);
         const buffer = 5;
         if (
-          dist >= (enemy.size - buffer) && // fora do centro
-          dist <= (enemy.size + buffer) && // dentro da borda/perímetro
+          dist >= enemy.size - buffer && // fora do centro
+          dist <= enemy.size + buffer && // dentro da borda/perímetro
           !this.enemiesTouched.includes(enemy)
         ) {
           this.enemiesTouched.push(enemy);
@@ -124,7 +148,7 @@ class EchoLine {
           enemy.chasing = true;
           enemy.touchingLines++;
         }
-      }      
+      }
     }
 
     this.path.push({ x: this.x, y: this.y });
@@ -132,24 +156,26 @@ class EchoLine {
 
   // Desenha a linha de eco
   // Se for um inimigo, usa a cor do inimigo
-  draw(ctx, offsetX) {
+  draw() {
     const age = Date.now() - this.createdAt;
     const alpha = Math.max(0, 1 - age / this.duration);
     if (alpha <= 0) return;
 
-    /*if (this.type != 'enemy' && this.enemiesTouched.length > 0) {
-      ctx.fillStyle = this.enemiesTouched[0].bodyColor;
-    } else {*/
-      ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
-    //
+    game.ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
 
-    ctx.lineWidth = ECHO_LINE_WIDTH;
-    ctx.beginPath();
-    ctx.moveTo(this.path[0].x - offsetX, this.path[0].y);
+    game.ctx.lineWidth = config.ECHO_LINE_WIDTH;
+    game.ctx.beginPath();
+    game.ctx.moveTo(
+      this.path[0].x - game.camera.x,
+      this.path[0].y - game.camera.y
+    );
     for (let i = 1; i < this.path.length; i++) {
-      ctx.lineTo(this.path[i].x - offsetX, this.path[i].y);
+      game.ctx.lineTo(
+        this.path[i].x - game.camera.x,
+        this.path[i].y - game.camera.y
+      );
     }
-    ctx.stroke();
+    game.ctx.stroke();
   }
 
   // Verifica se a linha de eco está morta
@@ -157,4 +183,3 @@ class EchoLine {
     return Date.now() - this.createdAt > this.duration;
   }
 }
-
