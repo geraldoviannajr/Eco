@@ -1,8 +1,26 @@
 // === SISTEMA DE COLISÃO ===
+
+/**
+ * Verifica se um ponto (x, y) está dentro de um círculo.
+ * @param {number} x - Coordenada x do ponto a ser testado.
+ * @param {number} y - Coordenada y do ponto a ser testado.
+ * @param {{x: number, y: number, radius: number}} circle - Objeto círculo com centro (x1, y1) e raio r1.
+ * @returns {boolean} true se o ponto está dentro ou na borda do círculo.
+ */
 function pointInCircle(x, y, circle) {
-  const dx = x - circle.x;
-  const dy = y - circle.y;
-  return dx * dx + dy * dy <= circle.radius * circle.radius;
+  // Calcula a diferença entre as coordenadas do ponto e do centro do círculo
+  const dx = x - circle.x; // diferença em x
+  const dy = y - circle.y; // diferença em y
+
+  // Calcula a distância ao quadrado entre o ponto e o centro do círculo
+  const distanceSquared = (dx * dx) + (dy * dy);
+
+  // Calcula o raio ao quadrado do círculo
+  const radiusSquared = circle.radius * circle.radius;
+
+  // Se a distância ao quadrado for menor ou igual ao raio ao quadrado,
+  // o ponto está dentro ou na borda do círculo
+  return distanceSquared <= radiusSquared;
 }
 
 function pointInPolygon(px, py, polygon) {

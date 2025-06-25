@@ -4,7 +4,7 @@ class Enemy {
   type = "echo"; // Tipo do inimigo, pode ser 'echo' ou 'radar'
   waveCount = 90; // Contagem de ondas para o efeito de radar
   waveAmplitude = 2; // Amplitude da onda para o efeito de radar
-  size = 20; // Tamanho do inimigo
+  radius = 20; // Tamanho do inimigo
   speed = 0.4; // Velocidade de movimento do inimigo
   miliSecBetweenEchos = 1000; // Intervalo entre os ecos
   chasing = false; // Indica se o inimigo está perseguindo o jogador
@@ -22,11 +22,11 @@ class Enemy {
 
   // Construtor da classe Enemy
   // Recebe as coordenadas x e y, tipo, tamanho e velocidade do inimigo
-  constructor(x, y, type = "echo", size = 20, speed = 0.2) {
+  constructor(x, y, type = "echo", radius = 20, speed = 0.2) {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.size = size;
+    this.radius = radius;
     this.speed = 0.2;
   }
 
@@ -46,8 +46,8 @@ class Enemy {
       const ny = dy / dist;
       const nextX = this.x + nx * this.speed;
       const nextY = this.y + ny * this.speed;
-      if (!isWallColliding(nextX, this.y, this.size + 10)) this.x = nextX;
-      if (!isWallColliding(this.x, nextY, this.size + 10)) this.y = nextY;
+      if (!isWallColliding(nextX, this.y, this.radius + 10)) this.x = nextX;
+      if (!isWallColliding(this.x, nextY, this.radius + 10)) this.y = nextY;
 
       let moved = game.player.x !== prevX || game.player.y !== prevY;
 
@@ -64,8 +64,8 @@ class Enemy {
         }
       }
 
-      // Player alcançado por um inimigo
-      if (isPlayerColliding(this.x, this.y, this.size / 2 + 15)) {
+      // Player alcançado pelo inimigo
+      if (isPlayerColliding(this.x, this.y, this.radius + 5)) {
         game.player.isDead = true;
       }
     }
@@ -116,18 +116,12 @@ class Enemy {
   // Se for um inimigo do tipo radar, desenha o efeito de circulos ondulados
   draw() {
     if (this.type == "radar" && this.visible) {
-      const circle1Radius = this.size;
-      const circle2Radius = this.size + 5;
+      const circle1Radius = this.radius;
+      const circle2Radius = this.radius + 5;
       const now = Date.now();
 
       this.drawWavyCircle(circle1Radius, 0.002, "rgba(255, 0, 0, 0.5)", 0, now);
-      this.drawWavyCircle(
-        circle2Radius,
-        -0.0015,
-        "rgba(255, 50, 50, 0.3)",
-        Math.PI / 2,
-        now
-      );
+      this.drawWavyCircle(circle2Radius,-0.0015,"rgba(255, 50, 50, 0.3)",Math.PI / 2,now);
     }
   }
 }

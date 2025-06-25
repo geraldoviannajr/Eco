@@ -22,8 +22,8 @@ function emitEnemyEcho(enemy) {
     const angle = ((Math.PI * 2) / enemy.lineCount) * i;
     game.lines.push(
       new EchoLine(
-        enemy.x + Math.cos(angle) * (enemy.size + 10),
-        enemy.y + Math.sin(angle) * (enemy.size + 10),
+        enemy.x + Math.cos(angle) * (enemy.radius + 10),
+        enemy.y + Math.sin(angle) * (enemy.radius + 10),
         angle,
         "enemy",
         enemy,
@@ -139,8 +139,8 @@ class EchoLine {
         const dist = Math.hypot(dx, dy);
         const buffer = 5;
         if (
-          dist >= enemy.size - buffer && // fora do centro
-          dist <= enemy.size + buffer && // dentro da borda/perímetro
+          dist >= enemy.radius - buffer && // fora do centro
+          dist <= enemy.radius + buffer && // dentro da borda/perímetro
           !this.enemiesTouched.includes(enemy)
         ) {
           this.enemiesTouched.push(enemy);

@@ -8,6 +8,7 @@ class Game {
   keys = {};
   keyPressTimes = {};
   mouseTarget = null;  
+  mousePos = null;  
   isMousePressed = false;
   mousePressStart = 0;
   lastClapTime = 0;
@@ -173,6 +174,15 @@ class Game {
     }
   };
 
+  EmitClap = () => {
+    const now = Date.now();
+    if (now - this.lastClapTime >= config.CLAP_COOLDOWN) {
+      this.lastClapTime = now;
+      emitEcho(this.player.x, this.player.y, "clap");
+      playClapSound();
+    }
+  }
+
   AddEvents = () => {
     // === EVENTOS ===
     window.addEventListener("keydown", (e) => {
@@ -203,18 +213,7 @@ class Game {
 
       //Se apertou "space"
       if (e.code === "Space") {
-        const now = Date.now();
-        if (now - this.lastClapTime >= config.CLAP_COOLDOWN) {
-          this.lastClapTime = now;
-          emitEcho(this.player.x, this.player.y, "clap");
-          playClapSound();
-        }
-      }
-    });
-
-    window.addEventListener("mousedown", () => {
-      if (audioContext.state === "suspended") {
-        audioContext.resume();
+        this.EmitClap();
       }
     });
 
@@ -229,6 +228,7 @@ class Game {
         this.mouseTarget = { x: mouseX, y: mouseY };
         this.isMousePressed = true;
         this.mousePressStart = Date.now();
+        //if (audioContext.state === "suspended") { audioContext.resume(); }
       });
 
       this.canvas.addEventListener("mouseup", (e) => {
@@ -241,29 +241,40 @@ class Game {
 
       this.canvas.addEventListener("mousemove", (e) => {
         e.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const mouseX = ((e.clientX - rect.left) * scaleX) + this.camera.x;
+        const mouseY = ((e.clientY - rect.top) * scaleY) + this.camera.y;
+
         if (this.isMousePressed) {
-          const rect = this.canvas.getBoundingClientRect();
-          const scaleX = this.canvas.width / rect.width;
-          const scaleY = this.canvas.height / rect.height;
-          const mouseX = ((e.clientX - rect.left) * scaleX) + this.camera.x;
-          const mouseY = ((e.clientY - rect.top) * scaleY) + this.camera.y;
           this.mouseTarget = { x: mouseX, y: mouseY };
+        }
+        else {
+          this.mousePos = { x: mouseX, y: mouseY };
         }
       });
     } else {
       this.canvas.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        const touch = e.touches[e.touches.length - 1]; // Armazena o índice do último toque
-        this.idTouchPlayerMove = touch.identifier; // Armazena o ID do toque que move o jogador
+        // Se houver dois toques, dispara o clap
+        if (e.touches.length == 2)  {
+          this.EmitClap();
+        }
+        // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
+        else if (e.touches.length == 1) {
+          const touch = e.touches[e.touches.length - 1]; // Armazena o índice do último toque
+          this.idTouchPlayerMove = touch.identifier; // Armazena o ID do toque que move o jogador
 
-        const rect = this.canvas.getBoundingClientRect();        
-        const scaleX = this.canvas.width / rect.width;
-        const scaleY = this.canvas.height / rect.height;
-        const mouseX = ((touch.clientX - rect.left) * scaleX) + this.camera.x;
-        const mouseY = ((touch.clientY - rect.top) * scaleY) + this.camera.y;
-        this.mouseTarget = { x: mouseX, y: mouseY };
-        this.isMousePressed = true;
-        this.mousePressStart = Date.now();
+          const rect = this.canvas.getBoundingClientRect();        
+          const scaleX = this.canvas.width / rect.width;
+          const scaleY = this.canvas.height / rect.height;
+          const mouseX = ((touch.clientX - rect.left) * scaleX) + this.camera.x;
+          const mouseY = ((touch.clientY - rect.top) * scaleY) + this.camera.y;
+          this.mouseTarget = { x: mouseX, y: mouseY };
+          this.isMousePressed = true;
+          this.mousePressStart = Date.now();
+        }
 
       });
 
@@ -376,10 +387,17 @@ class Game {
 
   DrawInfo = () => {    
     const message = 
-    "Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
+    /*"Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
     " | Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
     " | Camera: (" + Math.round(this.camera.x) + ", " + Math.round(this.camera.y) + ")" +
-    (this.mouseTarget ? `" | Touch: (${Math.round(this.mouseTarget.x)}, ${Math.round(this.mouseTarget.y)})` : "");
+    (this.mouseTarget ? `" | Touch: (${Math.round(this.mouseTarget.x)}, ${Math.round(this.mouseTarget.y)})` : "")
+    ;*/
+
+    " Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
+    " Enemy[1]: (" + Math.round(this.map.enemies[0].x) + ", " + Math.round(this.map.enemies[0].y) + ", " + this.map.enemies[0].radius + ")" +
+    " Enemy[2]: (" + Math.round(this.map.enemies[1].x) + ", " + Math.round(this.map.enemies[1].y) + ", " + this.map.enemies[1].radius + ")" +
+    " Mouse: (" + (this.mousePos ? Math.round(this.mousePos.x) : "N/A") + ", " + (this.mousePos ? Math.round(this.mousePos.y) : "N/A")
+    ;
 
     this.ctx.save();
     this.ctx.font = "8px arial,sans-serif";
