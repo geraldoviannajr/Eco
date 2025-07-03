@@ -1,17 +1,14 @@
 class Map1 extends Map {
+  level = 1;
   name = "map1";
   title = "Map 1 - Fase 1";
   description = "This is the first map of the game. Navigate through the corridors and avoid enemies.";
   width = 2500; // Largura do mapa
   height = game.canvas.height; // Altura do mapa
 
-  constructor() {
-    super();
-  }
+  constructor() { super(); }
 
-  Load() {
-    super.Load();
-
+  Load() {    
     // === PAREDES ===
     this.walls = [
       // Parede superior
@@ -42,9 +39,9 @@ class Map1 extends Map {
 
     // === PORTA ===
     this.exitDoor = {
-      x: this.width - 5,
+      x: this.width - 90,
       y: this.height / 2 - 50,
-      width: 5,
+      width: 10,
       height: 100,
       visible: false,
       touchingLines: 0,
@@ -55,13 +52,15 @@ class Map1 extends Map {
       new Enemy(
         this.width * 0.25,
         this.height / 2,
+        "little darker",
         "echo",
-        10,
+        1,
         0.4
       ),
       new Enemy(
         this.width * 0.5,
         this.height / 2,
+        "big darker",
         "radar",
         120,
         0.2
@@ -82,5 +81,7 @@ class Map1 extends Map {
 
     game.player.x = 5;
     game.player.y = this.height / 2;
+
+    super.Load();
   }
 }

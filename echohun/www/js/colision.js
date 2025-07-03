@@ -63,11 +63,12 @@ function isWallColliding(x, y, radius = 0) {
 }
 
 function isPlayerColliding(_x, _y, _radius = 0) {
-  return pointInCircle(game.player.x, game.player.y, {
-    x: _x,
-    y: _y,
-    radius: _radius,
-  });
+  // Verifica se os círculos (player e inimigo/objeto) colidem
+  const dx = game.player.x - _x;
+  const dy = game.player.y - _y;
+  const distance = Math.hypot(dx, dy);
+  const sumRadius = (game.player.radius || 0) + (_radius || 0);
+  return distance <= sumRadius;
 }
 
 function segmentsIntersect(p1, p2, q1, q2) {

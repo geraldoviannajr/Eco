@@ -1,45 +1,15 @@
 // === LINHAS DE ECO ===
-function emitEcho(x = game.player.x, y = game.player.y, type = "walk") {
-  var lineCount =
-    type == "clap" ? config.CLAP_LINE_COUNT : config.ECHO_LINE_COUNT;
-  for (let i = 0; i < lineCount; i++) {
-    const angle = ((Math.PI * 2) / lineCount) * i;
-    game.lines.push(
-      new EchoLine(
-        x,
-        y,
-        angle,
-        type,
-        null,
-        type == "clap" ? config.CLAP_ECHO_BOUNCES : 3
-      )
-    );
-  }
-}
 
-function emitEnemyEcho(enemy) {
-  for (let i = 0; i < enemy.lineCount; i++) {
-    const angle = ((Math.PI * 2) / enemy.lineCount) * i;
-    game.lines.push(
-      new EchoLine(
-        enemy.x + Math.cos(angle) * (enemy.radius + 10),
-        enemy.y + Math.sin(angle) * (enemy.radius + 10),
-        angle,
-        "enemy",
-        enemy,
-        3
-      )
-    );
-  }
-}
 
 class EchoLine {
   // Tipo de eco: 'walk', 'run', 'clap', 'enemy'
   constructor(x, y, angle, type, _enemy = null, bounces = 3) {
     this.type = type;
-    this.isRunning = type == "run";
+    this.isRunning = (type == "run");
     this.x = x;
     this.y = y;
+    this.startX = x;
+    this.startY = y;
     this.angle = angle;
     this.bounces = bounces;
     this.createdAt = Date.now();
@@ -52,7 +22,7 @@ class EchoLine {
       this.color = this.enemy.echoColor;
       this.expansionSpeed = this.enemy.expansionSpeed;
     } else if (this.type == "clap") {
-      this.duration = config.CLAP_ECHO_DURATION;
+      this.duration = config.CLAP_ECHO_DURATION * (window.game.player.stamina / 20);
       this.color = config.CLAP_COLOR;
       this.expansionSpeed = config.CLAP_EXPANSION_SPEED;
     } else {
@@ -80,7 +50,7 @@ class EchoLine {
     const nextX = this.x + dx;
     const nextY = this.y + dy;
 
-    let collided = false;
+    var collided = false;
 
     for (const poly of game.map.walls) {
       for (let i = 0; i < poly.length; i++) {
@@ -138,16 +108,14 @@ class EchoLine {
         const dy = this.y - enemy.y;
         const dist = Math.hypot(dx, dy);
         const buffer = 5;
-        if (
-          dist >= enemy.radius - buffer && // fora do centro
-          dist <= enemy.radius + buffer && // dentro da borda/perímetro
-          !this.enemiesTouched.includes(enemy)
+        if (!this.enemiesTouched.includes(enemy)
+          && dist >= enemy.radius - buffer // fora do centro
+          && dist <= enemy.radius + buffer // dentro da borda/perímetro
         ) {
           this.enemiesTouched.push(enemy);
-          enemy.visible = true;
-          enemy.chasing = true;
+          enemy.chasingPoint = {x: this.startX, y: this.startY};
           enemy.touchingLines++;
-        }
+        }        
       }
     }
 

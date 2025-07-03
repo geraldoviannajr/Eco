@@ -1,11 +1,12 @@
 class Map {
+  level = 0;
   name = "";
   title = "";
   description = "";
   width = 0;
   height = 0;
   mapStarted = false;
-  walls = [];  
+  walls = []; 
   exitDoor = {
     x: 0,
     y: 0,
@@ -21,9 +22,40 @@ class Map {
     this.height = h;
   }
 
+  generateNavGrid = (cellSize = 16, radius = 10) => {
+    const cols = Math.ceil(this.width / cellSize);
+    const rows = Math.ceil(this.height / cellSize);
+    const navGrid = [];
+
+    for (let y = 0; y < rows; y++) {
+      navGrid[y] = [];
+      for (let x = 0; x < cols; x++) {
+        // Calcula o centro da célula
+        const cx = x * cellSize + cellSize / 2;
+        const cy = y * cellSize + cellSize / 2;
+
+        // Verifica se o centro está dentro de alguma parede
+        let blocked = false;
+        if (isWallColliding(cx, cy, radius)) {
+          blocked = true; 
+        }
+
+        navGrid[y][x] = blocked ? 1 : 0;
+      }
+    }
+    return navGrid;
+  };
+
   Load() {
-    this.mapStarted = true;
     console.log(`Carregando mapa: ${this.name}`);
+    this.generateNavGrid(config.CELL_SIZE);      
+    for (const enemy of this.enemies) {
+      console.log(` |-> Carregando inimigo: ${enemy.name}`);      
+      enemy.navGrid = this.generateNavGrid(config.CELL_SIZE, enemy.radius / 4);
+    }
+    console.log(` |-> Carregando player`);
+    game.player.navGrid = this.generateNavGrid(config.CELL_SIZE, game.player.radius);
+    this.mapStarted = true;
   }
 
   Draw() {
