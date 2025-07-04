@@ -49,35 +49,25 @@ class Map1 extends Map {
 
     // === INIMIGOS ===
     this.enemies = [
-      new Enemy(
+      new Darkness(
         this.width * 0.25,
         this.height / 2,
         "little darker",
-        "echo",
-        1,
+        10,
         0.4
       ),
-      new Enemy(
+      new DeepDarkness(
         this.width * 0.5,
         this.height / 2,
         "big darker",
-        "radar",
         120,
         0.2
       ),
     ];
 
     // Propriedades específicas dos inimigo
-    this.enemies[0].detectionCoolDown = 3000;
     this.enemies[0].expansionSpeed = 4;
     this.enemies[0].lineCount = 24;
-
-    this.enemies[1].waveCount = 90;
-    this.enemies[1].waveAmplitude = 2;
-    this.enemies[1].bodyColor = `rgba(0,0,0,1)`;
-    this.enemies[1].echoColor = [255, 0, 0, 0.8];
-    this.enemies[1].expansionSpeed = 4;
-    this.enemies[1].lineCount = 36;
 
     game.player.x = 5;
     game.player.y = this.height / 2;

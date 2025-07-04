@@ -3,6 +3,7 @@ class Enemy {
   y = 0;
   name = "Inimigo"; // Nome do inimigo
   type = "echo"; // Tipo do inimigo, pode ser 'echo' ou 'radar'
+  createdAt = Date.now(); // Data de criação do inimigo
   waveCount = 90; // Contagem de ondas para o efeito de radar
   waveAmplitude = 2; // Amplitude da onda para o efeito de radar
   radius = 20; // Tamanho do inimigo
@@ -14,7 +15,7 @@ class Enemy {
   bodyColor = `rgba(0,0,0,1)`; // Cor do corpo do inimigo
   echoColor = [255, 0, 0, 0.8]; // Cor do eco do inimigo
   expansionSpeed = 4; // Velocidade de expansão do eco
-  duration = 1300; // Duração do eco
+  duration = 1000; // Duração do eco
   lineCount = 24; // Número de linhas no efeito de eco  
   chasingPoint = {x: 0, y : 0}; // Último ponto de perseguição do inimigo
   lastEcho = Date.now(); // Último eco emitido pelo inimigo
@@ -33,12 +34,16 @@ class Enemy {
     this.speed = 0.2;
   }
 
+  emitAttack = () => {
+    
+  }
+
   emitEcho = () => {
     for (let i = 0; i < this.lineCount; i++) {
       const angle = ((Math.PI * 2) / this.lineCount) * i;
       
-      var x = this.x + Math.cos(angle) * (this.radius + 10);
-      var y = this.y + Math.sin(angle) * (this.radius + 10); 
+      var x = this.x + Math.cos(angle) * (this.radius + 5);
+      var y = this.y + Math.sin(angle) * (this.radius + 5); 
       
       if (isWallColliding(x, y, this.radius)) {
         // Se colidir com parede, ajusta a posição para evitar que o eco nasça dentro da parede
@@ -81,7 +86,7 @@ class Enemy {
         convertToCellCoordinates(this.chasingPoint.x, this.chasingPoint.y),
         this.navGrid
       );        
-    } else {
+    } else if (!(this instanceof LittleDarkness)) {
       this.chasing = false; // Se não há ponto de perseguição, para a perseguição
       this.visible = false; // Torna o inimigo invisível
     }
@@ -169,8 +174,14 @@ class Enemy {
             this.navGrid
           );
           if (this.chasingPath.length <= 0) {              
-            this.chasing = false;
-            this.visible = false;
+            // Verifica a distância do player para o inimigo
+            const dxPlayer = game.player.x - this.x;
+            const dyPlayer = game.player.y - this.y;
+            const distPlayer = Math.hypot(dxPlayer, dyPlayer);
+
+            // Se o player estiver a menos de 150 pixels do inimigo e o inimigo estiver imóvel, emite um ataque
+            // Isso simula o ataque do inimigo quando ele não consegue se mover
+            if (distPlayer < 150) { this.emitAttack(); }            
           }
         }
       }      
@@ -185,21 +196,24 @@ class Enemy {
           this.lastEcho = now;
           this.forceNextStep = false;          
           this.emitEcho();
-          console.log(`Inimigo ${this.name} emitiu um eco.`);
           //playStepSound(false);
         }
       }
 
+      // Se chegou ao ponto de perseguição, reseta o ponto ou se a distância for muito pequena
+      // Isso evita que o inimigo fique preso no ponto de perseguição
       if (this.chasingPoint.x != 0 && this.chasingPoint.y != 0) {
-        if (this.x == this.chasingPoint.x && this.y == this.chasingPoint.y) {
-          // Se chegou ao ponto de perseguição, reseta o ponto
+        const dx = this.x - this.chasingPoint.x;
+        const dy = this.y - this.chasingPoint.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 5) { // Se estiver muito próximo do ponto de perseguição
           this.chasingPoint = { x: 0, y: 0 };
           this.touchingLines = 0; // Reseta o contador de linhas tocadas
           this.chasing = false; // Para a perseguição
           this.visible = false; // Torna invisível
           this.chasingPath = []; // Limpa o caminho
         }
-      }       
+      }     
 
       // Player alcançado pelo inimigo
       if (isPlayerColliding(this.x, this.y, this.radius + 5)) { game.player.isDead = true; }
@@ -212,61 +226,11 @@ class Enemy {
 
   }
 
-  // Desenha um círculo ondulado
-  drawWavyCircle(radius, speed, color, rotationOffset, time) {
-    game.ctx.beginPath();
-    const ctxX = this.x - window.game.camera.x;
-    const ctxY = this.y - window.game.camera.y;
-
-    for (let i = 0; i <= 360; i += 5) {
-      const angle = (i * Math.PI) / 180;
-      const wave =
-        Math.sin(angle * this.waveCount + time * speed + rotationOffset) *
-        this.waveAmplitude;
-      const r = radius + wave;
-      const x = ctxX + Math.cos(angle) * r;
-      const y = ctxY + Math.sin(angle) * r;
-      if (i === 0) game.ctx.moveTo(x, y);
-      else game.ctx.lineTo(x, y);
-    }
-    game.ctx.closePath();
-    game.ctx.strokeStyle = color;
-    game.ctx.lineWidth = 2;
-    game.ctx.stroke();
-  }
 
   // Desenha o inimigo
   // Se for um inimigo do tipo radar, desenha o efeito de circulos ondulados
-  draw() {
-    if (this.type == "radar" && this.visible) {
-      const circle1Radius = this.radius;
-      const circle2Radius = this.radius + 5;
-      const now = Date.now();
-
-      this.drawWavyCircle(circle1Radius, 0.002, "rgba(255, 0, 0, 0.5)", 0, now);
-      this.drawWavyCircle(circle2Radius,-0.0015,"rgba(255, 50, 50, 0.3)",Math.PI / 2,now);
-    }
-
-    
-    if (config.DEBUG) {
-     
-      // Desenha o círculo do inimigo
-      game.ctx.save();
-      game.ctx.beginPath();
-      game.ctx.arc(
-        this.x - game.camera.x,
-        this.y - game.camera.y,
-        this.radius,
-        0,
-        Math.PI * 2
-      );
-      game.ctx.fillStyle = this.bodyColor;
-      game.ctx.fill();
-      game.ctx.strokeStyle = "black";
-      game.ctx.lineWidth = 1;
-      game.ctx.stroke();
-      game.ctx.restore();
-    
+  draw() {   
+    if (config.DEBUG) {        
       // Desenha uma representação visual das células do pathfinder ao redor do inimigo
       if (this.navGrid && this.navGrid.length > 0) {
         const cellSize = config.CELL_SIZE;

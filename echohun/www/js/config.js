@@ -21,9 +21,8 @@ config = {
   CLAP_ECHO_BOUNCES: 3, // Mais reflexões
   CLAP_COOLDOWN: 30000, // 30 segundos entre cada clap
   CLAP_EXPANSION_SPEED: 4, // Expande mais rápido
-
-  WALL_COLOR: "rgb(100, 100, 100)",
-  //WALL_COLOR : "rgb(0, 0, 0)",
+  
+  WALL_COLOR : "rgb(0, 0, 0)",
   DOOR_COLOR: "rgba(0, 255, 0, 0.9)",  
 
   GAME_SCREEN_WIDTH: 824,

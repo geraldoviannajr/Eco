@@ -15,6 +15,9 @@ class Game {
   idTouchPlayerMove = -1; // Idetificador do toque que move o jogador, -1 significa nenhum toque ativo
   lastUpdateTime = 0; // Armazena o tempo do último update
   hud = new HUD();
+  fps = 0; // Frames per second
+   _framesThisSecond = 0;
+  _lastFpsUpdate = performance.now();    
   constructor(w, h) {
     this.lines = [];
     this.camera = { x: 0, y: 0 };
@@ -23,7 +26,6 @@ class Game {
     this.mouseTarget = null;
     this.isMousePressed = false;
     this.mousePressStart = 0;
-
     this.canvas = document.getElementById("gameCanvas");
     this.ctx = this.canvas.getContext("2d");
 
@@ -285,10 +287,11 @@ class Game {
   };
   DrawInfo = () => {    
     const msg = 
-      "Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
-      " | Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
-      " | Camera: (" + Math.round(this.camera.x) + ", " + Math.round(this.camera.y) + ")" ;
-
+        "FPS: " + this.fps +
+        " | Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
+        " | Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
+        " | Camera: (" + Math.round(this.camera.x) + ", " + Math.round(this.camera.y) + ")";
+    
       /*
       " Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
       " Enemy[1]: (" + Math.round(this.map.enemies[0].x) + ", " + Math.round(this.map.enemies[0].y) + ", " + this.map.enemies[0].radius + ")" +
@@ -359,6 +362,15 @@ class Game {
   };
   Animate = () => {
     this.Draw();    
+
+    // FPS calculation
+    const now = performance.now();
+    this._framesThisSecond++;
+    if (now - this._lastFpsUpdate >= 1000) {
+      this.fps = this._framesThisSecond;
+      this._framesThisSecond = 0;
+      this._lastFpsUpdate = now;
+    }
 
     if (this.map.mapStarted && !this.player.isDead && !this.isPaused) {
       this.HandleCamera();

@@ -1,7 +1,5 @@
 class HUD {
-    constructor() {
-
-    }
+    constructor() { }
 
     draw = () => {
         const ctx = window.game.ctx;
@@ -91,5 +89,7 @@ class HUD {
 
         // Marcador de 30% da stamina (posição relativa)
         drawMarker(stStart + thirtyPercentAngle);
+
+        
     }
 }

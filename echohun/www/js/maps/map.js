@@ -69,6 +69,7 @@ class Map {
   }
 
   DrawWalls = () => {
+    if (config.DEBUG) { config.WALL_COLOR = "rgb(100, 100, 100)"; }
     game.ctx.fillStyle = config.WALL_COLOR;
 
     for (const wall of this.walls) {
