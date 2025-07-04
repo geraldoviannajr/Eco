@@ -22,6 +22,7 @@ class Enemy {
   forceNextStep = false; // Força o próximo passo do inimigo, usado para testes
   navGrid = []; // Matriz de navegação do inimigo dentro do mapa, será preenchida pelo mapa no momento do carregamento
   chasingPath = []; // Último caminho calculado pelo inimigo  
+  _lastAttack = 0; // Último ataque emitido pelo inimigo
 
   // Construtor da classe Enemy
   // Recebe as coordenadas x e y, tipo, tamanho e velocidade do inimigo
@@ -34,16 +35,16 @@ class Enemy {
     this.speed = 0.2;
   }
 
-  emitAttack = () => {
-    
+  emitAttack() { 
+    this._lastAttack = Date.now();
   }
 
-  emitEcho = () => {
+  emitEcho() {
     for (let i = 0; i < this.lineCount; i++) {
       const angle = ((Math.PI * 2) / this.lineCount) * i;
       
-      var x = this.x + Math.cos(angle) * (this.radius + 5);
-      var y = this.y + Math.sin(angle) * (this.radius + 5); 
+      var x = this.x + Math.cos(angle) * (this.radius);
+      var y = this.y + Math.sin(angle) * (this.radius); 
       
       if (isWallColliding(x, y, this.radius)) {
         // Se colidir com parede, ajusta a posição para evitar que o eco nasça dentro da parede
@@ -54,21 +55,11 @@ class Enemy {
         y += offsetY;
         // Verifica novamente se colide com parede após o ajuste
         if (isWallColliding(x, y, this.radius)) {
-          console.warn(`Eco não pode ser emitido: colidindo com parede em (${x}, ${y})`);
           continue; // Pula este eco se ainda colidir com parede
         }        
       } 
-      
-      game.lines.push(
-        new EchoLine(          
-          x,
-          y,
-          angle,
-          "enemy",
-          this,
-          3
-        )
-      );
+     
+      game.lines.push( new EchoLine(x, y, angle, "enemy", this, 3) );
     }
   }
   // Verifica se o inimigo está colidindo com uma linha ou se está se movimentando
@@ -167,13 +158,14 @@ class Enemy {
         } else if (!isWallColliding(this.x, nextY, this.radius))  {
           this.y = nextY;
         } else {          
-          // Se não puder se mover, recalcula rota, se não for possível, interrompe a perseguição.
+          // Se não puder se mover, recalcula rota, se não for possível, interrompe a perseguição e se estiver bem próximo lança um ataque.
           this.chasingPath = findPath(
             convertToCellCoordinates(this.x, this.y),
             convertToCellCoordinates(this.chasingPoint.x, this.chasingPoint.y),
             this.navGrid
           );
-          if (this.chasingPath.length <= 0) {              
+          if (this.chasingPath.length <= 0) {
+            console.log('Imovel');
             // Verifica a distância do player para o inimigo
             const dxPlayer = game.player.x - this.x;
             const dyPlayer = game.player.y - this.y;
@@ -181,7 +173,9 @@ class Enemy {
 
             // Se o player estiver a menos de 150 pixels do inimigo e o inimigo estiver imóvel, emite um ataque
             // Isso simula o ataque do inimigo quando ele não consegue se mover
-            if (distPlayer < 150) { this.emitAttack(); }            
+            if (distPlayer < 150 && this instanceof DeepDarkness) {
+               this.emitAttack(); 
+            }
           }
         }
       }      
@@ -192,7 +186,7 @@ class Enemy {
           this.chasingPath.splice(1, 1); // Remove o primeiro nó, pois já se moveu até lá.
         }
 
-        if ( (this.type == "echo" && (now - this.lastEcho) >= this.miliSecBetweenEchos) || this.forceNextStep ) {
+        if ( (this instanceof Darkness && (now - this.lastEcho) >= this.miliSecBetweenEchos) || this.forceNextStep ) {
           this.lastEcho = now;
           this.forceNextStep = false;          
           this.emitEcho();
@@ -216,7 +210,7 @@ class Enemy {
       }     
 
       // Player alcançado pelo inimigo
-      if (isPlayerColliding(this.x, this.y, this.radius + 5)) { game.player.isDead = true; }
+      if (isPlayerColliding(this.x, this.y, this.radius + 8)) { game.player.isDead = true; }
     }
 
     /*if (this.chasingPath.length > 0) {

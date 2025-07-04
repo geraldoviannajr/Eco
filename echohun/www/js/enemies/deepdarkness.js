@@ -9,14 +9,20 @@ class DeepDarkness extends Enemy {
         super(x, y, name, "radar", radius, speed);
     }    
 
-    emitAttack = () => {
+    emitAttack() {                        
         // Emite um inimigo adiconal do tipo littleDarkness, como se fosse um filho e este inimigo já é criado com o chassing = true e o chassingpoint atual setado para a posição do player
-        const littleDarkness = new LittleDarkness(this.x, this.y, "Little Darkness", 10, 0.8);
-        littleDarkness.chassing = true;
-        littleDarkness.chassingPoint = { x: game.player.x, y: game.player.y };
-        game.map.enemies.push(littleDarkness);
-        // Adiciona o littleDarkness ao navGrid do mapa
-        littleDarkness.navGrid = game.map.generateNavGrid(config.CELL_SIZE, littleDarkness.radius / 4);        
+        if (this._lastAttack == 0 || Date.now() - this._lastAttack >= 3000) {
+            console.log("Ataque emitido");
+            super.emitAttack();      
+            const littleDarkness = new LittleDarkness(this.x, this.y, "Tinny Darkness", 10, 0.8);
+            littleDarkness.visible = true;
+            littleDarkness.chassing = true;
+            littleDarkness.chassingPoint = { x: game.player.x, y: game.player.y };
+            game.map.enemies.push(littleDarkness);
+
+            // Adiciona o littleDarkness ao navGrid do mapa
+            littleDarkness.navGrid = game.map.generateNavGrid(config.CELL_SIZE, littleDarkness.radius / 4);        
+        }
     };
 
     // Desenha um círculo ondulado
@@ -56,6 +62,8 @@ class DeepDarkness extends Enemy {
         game.ctx.beginPath();
         game.ctx.arc(this.x - game.camera.x, this.y - game.camera.y, this.radius, 0, Math.PI * 2);
         game.ctx.fill();
+
+        super.draw(); // Chama o método draw da classe pai para desenhar o inimigo
     }    
 
 }
