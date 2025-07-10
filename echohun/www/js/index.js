@@ -42,20 +42,12 @@ function onDeviceReady() {
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";
 
-  LoadSounds();
-
-  window.plugins.screensize.get(
-    (screensz) => {
-      /*alert("ScreenZ size: " + screensz.width + "x" + screensz.height);
-        alert("Screen size: " + window.screen.width + "x" + window.screen.height);
-        alert("Window size: " + window.innerWidth + "x" + window.innerHeight);
-        alert("Document size: " + document.documentElement.clientWidth + "x" + document.documentElement.clientHeight);*/
-
+  window.plugins.screensize.get( (screensz) => {
       window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);
 
       window.game.map = new Map1();
-      window.game.map.Load();
-      window.game.AddEvents();
+      window.game.map.load();
+      window.game.addEvents();
 
       document.addEventListener("pause",() => {window.game.pause();},false);
       document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false);
@@ -64,7 +56,7 @@ function onDeviceReady() {
       
       resizeCanvas();
 
-      window.game.Animate();
+      window.game.animate();
     },
     (error) => {
       console.error("Error getting screen size:", error);

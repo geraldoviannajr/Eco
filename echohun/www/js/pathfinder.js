@@ -160,4 +160,29 @@ function convertToWorldCoordinates(cell) {
   };
 }
 
-//export { findPath };
+function getRandomFreeNeighborCell(currentCell, navGrid) {
+  const neighbors = [
+    { x: currentCell.x + 1, y: currentCell.y },
+    { x: currentCell.x - 1, y: currentCell.y },
+    { x: currentCell.x, y: currentCell.y + 1 },
+    { x: currentCell.x, y: currentCell.y - 1 },
+    { x: currentCell.x + 1, y: currentCell.y + 1 },
+    { x: currentCell.x - 1, y: currentCell.y + 1 },
+    { x: currentCell.x + 1, y: currentCell.y - 1 },
+    { x: currentCell.x - 1, y: currentCell.y - 1 },
+  ];
+
+  // Filtra apenas as células livres e dentro dos limites
+  const freeNeighbors = neighbors.filter(n =>
+    n.x >= 0 && n.x < navGrid[0].length &&
+    n.y >= 0 && n.y < navGrid.length &&
+    navGrid[n.y][n.x] === 0
+  );
+
+  if (freeNeighbors.length > 0) {
+    // Retorna uma célula aleatória do array de livres
+    return freeNeighbors[Math.floor(Math.random() * freeNeighbors.length)];
+  }
+  // Se não encontrar, retorna a própria célula
+  return currentCell;
+}

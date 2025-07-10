@@ -22,7 +22,7 @@ class Map {
     this.height = h;
   }
 
-  generateNavGrid = (cellSize = 16, radius = 10) => {
+  generateNavGrid = (cellSize = 16, radius = 10) => {    
     const cols = Math.ceil(this.width / cellSize);
     const rows = Math.ceil(this.height / cellSize);
     const navGrid = [];
@@ -36,6 +36,7 @@ class Map {
 
         // Verifica se o centro está dentro de alguma parede
         let blocked = false;
+        if (radius <= 0) { radius = 1; }
         if (isWallColliding(cx, cy, radius)) {
           blocked = true; 
         }
@@ -46,7 +47,7 @@ class Map {
     return navGrid;
   };
 
-  Load() {
+  load() {
     console.log(`Carregando mapa: ${this.name}`);
     this.generateNavGrid(config.CELL_SIZE);      
     for (const enemy of this.enemies) {
@@ -58,17 +59,23 @@ class Map {
     this.mapStarted = true;
   }
 
-  Draw() {
-    this.DrawWalls();
-    this.DrawExitDoor();
-    this.DrawEnemies();
+  draw() {
+    this.drawWalls();
+    this.drawExitDoor();
+    this.drawEnemies();
   }
 
-  Update() {
-    this.UpdateEnemies();
+  update() {
+    // Verifica se o jogador está colidindo com a porta de saída
+    if (game.player.x >= this.exitDoor.x &&
+        game.player.x <= this.exitDoor.x + this.exitDoor.width &&
+        game.player.y >= this.exitDoor.y &&
+        game.player.y <= this.exitDoor.y + this.exitDoor.height) {
+      this.exit();
+    }
   }
 
-  DrawWalls = () => {
+  drawWalls = () => {
     if (config.DEBUG) { config.WALL_COLOR = "rgb(100, 100, 100)"; }
     game.ctx.fillStyle = config.WALL_COLOR;
 
@@ -84,7 +91,7 @@ class Map {
     }
   };
 
-  DrawExitDoor = () => {
+  drawExitDoor = () => {
     if (!this.exitDoor.visible) return;
     game.ctx.fillStyle = config.DOOR_COLOR;
     game.ctx.fillRect(
@@ -95,19 +102,13 @@ class Map {
     );
   };
 
-  DrawEnemies = () => {
+  drawEnemies = () => {
     for (const enemy of this.enemies) {
       enemy.draw();
     }
   };
 
-  UpdateEnemies = () => {
-    for (const enemy of this.enemies) {
-      enemy.update();
-    }
-  };
-
-  Exit = () => {
+  exit = () => {
     this.mapStarted = false;
     game.player.isDead = false;
     // Em breve vamos carregar novos mapas

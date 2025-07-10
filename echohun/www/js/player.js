@@ -16,6 +16,7 @@ class Player {
   staminaCost = 10; // Custo de stamina por segundo ao correr
   radius = 8; // Raio de colisão do jogador
   navGrid = []; // Grade de navegação para o jogador
+  lastUpdateTime = 0; // Tempo do último update
 
   // Construtor da classe Player
   // Define a posição inicial do jogador, a velocidade de caminhada e outras propriedades iniciais
@@ -32,11 +33,12 @@ class Player {
     this.lastEcho = Date.now();
   }
 
-  MoveTowardMouse = (stepdistance) => {
+  moveTowardMouse(stepdistance) {
     if (!game.mouseTarget) return;
 
     const dx = game.mouseTarget.x - this.x;
     const dy = game.mouseTarget.y - this.y;
+
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < stepdistance) return;
 
@@ -46,22 +48,25 @@ class Player {
     const nextX = this.x + nx * stepdistance;
     const nextY = this.y + ny * stepdistance;
 
-    if (!isWallColliding(nextX, nextY, this.radius)) { this.x = nextX; this.y = nextY; }
+    if (!isWallColliding(nextX, nextY, this.radius)) { 
+      this.x = nextX; 
+      this.y = nextY; 
+    }
     else {
       if (!isWallColliding(nextX, this.y, this.radius)) this.x = nextX;
       else if (!isWallColliding(this.x, nextY, this.radius)) this.y = nextY;
-    }
+    }    
   };  
 
-  update = () => {   
+  update() {   
     const now = Date.now();
     const millisecondsDifference = now - this.lastEcho;
 
-    if (game.lastUpdateTime != 0) {
+    if (this.lastUpdateTime != 0) {
       if (this.isRunning) {
-        this.stamina -= this.staminaCost * ((now - game.lastUpdateTime) / 1000);
+        this.stamina -= this.staminaCost * ((now - this.lastUpdateTime) / 1000);
       } else {
-        this.stamina += this.staminaRegen * ((now - game.lastUpdateTime) / 1000);
+        this.stamina += this.staminaRegen * ((now - this.lastUpdateTime) / 1000);
       }
 
       if (this.stamina > config.MAX_STAMINA) {
@@ -99,7 +104,7 @@ class Player {
 
     let moved = false;
 
-    if (game.isMousePressed) this.MoveTowardMouse(stepdistance);
+    if (game.isMousePressed) this.moveTowardMouse(stepdistance);
     else {
       if (game.keys["d"] || game.keys["D"]) {
         const tryX = this.x + stepdistance;
@@ -124,10 +129,9 @@ class Player {
 
     if (moved) {
       if (millisecondsDifference >= this.speed || this.forceNextStep) {
-        this.lastEcho = now;
+        this.lastEcho = Date.now();
         this.forceNextStep = false;
         this.emitEcho(isRunning ? "run" : "walk");
-        playStepSound(isRunning);
       }
       this.lastStepX = this.x;
       this.lastStepY = this.y;
@@ -135,26 +139,49 @@ class Player {
 
     this.wasIdle = !moved && Object.keys(game.keys).length === 0 && !game.isMousePressed;
     this.isRunning = !this.wasIdle && isRunning;
+    this.lastUpdateTime = Date.now();
     this.isWalk = !this.wasIdle;
+
+    if (config.DEBUG) {
+      game.ctx.save();
+      game.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
+      game.ctx.beginPath();
+      game.ctx.arc(this.x - game.camera.x, this.y - game.camera.y, this.radius, 0, Math.PI * 2);
+      game.ctx.fill();
+      game.ctx.stroke();
+      game.ctx.restore();
+    }
   }
 
-  emitEcho = (type = "walk") => {
+  emitEcho(type = "walk") {
     var lineCount = type == "clap" ? config.CLAP_LINE_COUNT : config.ECHO_LINE_COUNT;
+    if (type == "clap") 
+      game.sounds.play("clap");
+    else
+      game.sounds.play(this.isRunning ? "run" : "step");
+
     for (let i = 0; i < lineCount; i++) {
-      const angle = ((Math.PI * 2) / lineCount) * i;
-          
-      if (isWallColliding(this.x, this.y, this.radius)) continue; // Evita eco nascer dentro das paredes
-      
-      game.lines.push(
-        new EchoLine(
-          this.x,
-          this.y,
-          angle,
-          type,
-          null,
-          type == "clap" ? config.CLAP_ECHO_BOUNCES : 3
-        )
-      );
+      const angle = ((Math.PI * 2) / lineCount) * i;          
+      if (isWallColliding(this.x, this.y, this.radius)) continue; // Evita eco nascer dentro das paredes      
+      game.lines.push( new EchoLine(this.x,this.y,angle,type,null,type == "clap" ? config.CLAP_ECHO_BOUNCES : 3));
     }
-  }  
+  } 
+  
+  suffering(force = 10) {
+    this.hp -= force;
+    if (this.hp <= 0) {
+      this.isDead = true;
+      this.hp = 0;
+      game.sounds.play("scream.dead");
+      console.log("Player morreu!");    
+    } else {
+      game.camera.shakeTime = 300; // duração em ms
+      game.camera.shakeDuration = 300;
+      game.camera.shakeIntensity = 8; // pixels de deslocamento
+      game.flashTime = 200; // duração em ms
+
+      game.sounds.play("scream.hurt");
+      console.log(`Player sofreu dano: ${force}. HP restante: ${this.hp}`);
+    }
+  }
 }

@@ -4,7 +4,7 @@ class Game {
   map = null;
   player = null;
   lines = [];
-  camera = { x: 0, y: 0 };
+  camera = new Camera();
   keys = {};
   keyPressTimes = {};
   mouseTarget = null;  
@@ -13,14 +13,13 @@ class Game {
   mousePressStart = 0;
   isPaused = false;
   idTouchPlayerMove = -1; // Idetificador do toque que move o jogador, -1 significa nenhum toque ativo
-  lastUpdateTime = 0; // Armazena o tempo do último update
   hud = new HUD();
-  fps = 0; // Frames per second
-   _framesThisSecond = 0;
+  fps = 0; // Frames per second  
+  _framesThisSecond = 0;
   _lastFpsUpdate = performance.now();    
+  _deltaTime = 16; // valor inicial em ms  
   constructor(w, h) {
     this.lines = [];
-    this.camera = { x: 0, y: 0 };
     this.keys = {};
     this.keyPressTimes = {};
     this.mouseTarget = null;
@@ -28,6 +27,7 @@ class Game {
     this.mousePressStart = 0;
     this.canvas = document.getElementById("gameCanvas");
     this.ctx = this.canvas.getContext("2d");
+    this._flashTime = 0;
 
     if (h > w) {
       this.canvas.width = h;
@@ -36,60 +36,28 @@ class Game {
       this.canvas.width = w;
       this.canvas.height = h;
     }
-        
+       
     this.ctx.scale(1, 1);
     //this.ctx.imageSmoothingEnabled = false; // Desativa o suavizado de imagem para evitar borrões
 
     this.player = new Player(0, 0); // Cria o jogador na posição inicial (0, 0);
+    this.sounds = new Sounds();
   }
   pause = () => {
     this.isPaused = true;
+    this.sounds.pauseAll();
   }
   resume = () => {
     this.isPaused = false;
+    this.sounds.resumeAll();
   }
-  HandleCamera = () => {
-    // Centraliza a câmera no jogador
-    const centerStartX = this.canvas.width / 2;
-    const centerStartY = this.canvas.height / 2;
-
-    const centerEndX = this.map.width - this.canvas.width / 2;
-    const centerEndY = this.map.height - this.canvas.height / 2;
-
-    if (this.player.x < centerStartX) {
-      this.camera.x = 0;
-    } else if (this.player.x > centerEndX) {
-      this.camera.x = this.map.width - this.canvas.width;
-    } else {
-      this.camera.x = this.player.x - this.canvas.width / 2;
-    }
-
-    if (this.player.y < centerStartY) {
-      this.camera.y = 0;
-    } else if (this.player.y > centerEndY) {
-      this.camera.y = this.map.height - this.canvas.height;
-    } else {
-      this.camera.y = this.player.y - this.canvas.height / 2;
-    }
-
-    // Verifica se o jogador está colidindo com a porta de saída
-    if (
-      this.player.x >= this.map.exitDoor.x &&
-      this.player.x <= this.map.exitDoor.x + this.map.exitDoor.width &&
-      this.player.y >= this.map.exitDoor.y &&
-      this.player.y <= this.map.exitDoor.y + this.map.exitDoor.height
-    ) {
-      this.map.Exit();
-    }
-  };
-  EmitClap = () => {
+  emitClap = () => {
     if (this.player.stamina >= config.MIN_STAMINA_CLAP && !this.player.isDead && !this.isPaused) {
       this.player.emitEcho("clap");
-      playClapSound();
       this.player.stamina = 0; // Custa todas as staminas
     }
   }
-  AddEvents = () => {
+  addEvents = () => {
     // === EVENTOS ===
     window.addEventListener("keydown", (e) => {
       if (!(e.key in this.keys)) {
@@ -119,11 +87,12 @@ class Game {
 
       //Se apertou "space"
       if (e.code === "Space") {
-        this.EmitClap();
+        this.emitClap();
       }
     });
 
-    if (device.platform == "browser") {
+    if (device.platform == "browser") // Eventos do Mouse (desktop)
+    {
       this.canvas.addEventListener("mousedown", (e) => {
         e.preventDefault();
         const rect = this.canvas.getBoundingClientRect();
@@ -160,12 +129,14 @@ class Game {
           this.mousePos = { x: mouseX, y: mouseY };
         }
       });
-    } else {
+    } 
+    else  // Eventos do Touchscreen (mobile)
+    {
       this.canvas.addEventListener("touchstart", (e) => {
         e.preventDefault();
         // Se houver dois toques, dispara o clap
         if (e.touches.length == 2)  {
-          this.EmitClap();
+          this.emitClap();
         }
         // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
         else if (e.touches.length == 1) {
@@ -222,15 +193,11 @@ class Game {
       });
     }
   };
-  DrawBackground = () => {
+  drawBackground = () => {
     this.ctx.fillStyle = "rgb(0, 0, 0)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   };
-  Draw = () => {
-    this.DrawBackground();
-    this.map.Draw();
-  };
-  DrawGameOver = () => {
+  drawGameOver = () => {
     this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -249,7 +216,7 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
-  DrawPause = () => {
+  drawPause = () => {
     this.ctx.fillStyle = "rgba(0, 0, 255, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -266,7 +233,7 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
-  DrawMapWin = () => {
+  drawMapWin = () => {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -285,7 +252,7 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
-  DrawInfo = () => {    
+  drawInfo = () => {    
     const msg = 
         "FPS: " + this.fps +
         " | Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
@@ -310,7 +277,7 @@ class Game {
     this.ctx.fillText(msg, 10, this.canvas.height - 20);
     this.ctx.restore();
   };
-  UpdateLines = () => {
+  updateLines = () => {
     for (let i = this.lines.length - 1; i >= 0; i--) {
       const line = this.lines[i];
       line.update();
@@ -340,43 +307,54 @@ class Game {
     }
     this.map.exitDoor.visible = this.map.exitDoor.touchingLines > 0;
   };  
-  Update = () => {
-    const now = Date.now();
+  update = () => {
+    if (this._flashTime > 0) {
+      this._flashTime -= this._deltaTime;
+      this.ctx.save();
+      this.ctx.globalAlpha = 0.25 + 0.25 * Math.random();
+      this.ctx.fillStyle = "#fff";
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.restore();
+    }    
+
+    this.player.update();
+    this.map.update();
+    for (const enemy of this.map.enemies) {
+      enemy.update();
+    }
+    this.updateLines();      
+  };
+
+  animate = () => {
+    if (this._lastFpsUpdate === 0) {
+      this._lastFpsUpdate = now; // Initialize on first run
+    }
+
+    this.drawBackground();
+    this.map.draw();
+    this.drawInfo();
 
     if (this.isPaused) {
-      this.DrawPause();
-    } else {
-      this.player.update(now);
-      this.map.Update();
-      this.UpdateLines();      
-      this.DrawInfo();
-    }
-
-    if (this.player.isDead == true) {
-      this.DrawGameOver();
+      this.drawPause();
+    } else if (this.player.isDead == true) {
+      this.drawGameOver();
     } else if (this.map.mapStarted == false) {
-      this.DrawMapWin();
-    }
-    
-    this.lastUpdateTime = now;
-  };
-  Animate = () => {
-    this.Draw();    
+      this.drawMapWin();
+    } else if (this.map.mapStarted && !this.player.isDead && !this.isPaused) {
+      this.update();
+      this.camera.update();      
+    }      
 
     // FPS calculation
     const now = performance.now();
+    this.deltaTime = now - this._lastFpsUpdate;
     this._framesThisSecond++;
     if (now - this._lastFpsUpdate >= 1000) {
       this.fps = this._framesThisSecond;
       this._framesThisSecond = 0;
       this._lastFpsUpdate = now;
     }
-
-    if (this.map.mapStarted && !this.player.isDead && !this.isPaused) {
-      this.HandleCamera();
-    }
-
-    this.Update();
-    requestAnimationFrame(this.Animate);
+    
+    requestAnimationFrame(this.animate);
   };
 }

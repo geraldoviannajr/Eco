@@ -8,7 +8,7 @@ class Map1 extends Map {
 
   constructor() { super(); }
 
-  Load() {    
+  load() {    
     // === PAREDES ===
     this.walls = [
       // Parede superior
@@ -49,29 +49,13 @@ class Map1 extends Map {
 
     // === INIMIGOS ===
     this.enemies = [
-      new Darkness(
-        this.width * 0.25,
-        this.height / 2,
-        "little darker",
-        10,
-        0.4
-      ),
-      new DeepDarkness(
-        this.width * 0.5,
-        this.height / 2,
-        "big darker",
-        120,
-        0.2
-      ),
+      new Darkness(this.width * 0.25,this.height / 2, "Terror"),
+      new DeepDarkness(this.width * 0.5,this.height / 2, "TerrorSupremo"),
     ];
-
-    // Propriedades específicas dos inimigo
-    this.enemies[0].expansionSpeed = 4;
-    this.enemies[0].lineCount = 24;
 
     game.player.x = 5;
     game.player.y = this.height / 2;
 
-    super.Load();
+    super.load();
   }
 }

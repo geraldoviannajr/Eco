@@ -2,27 +2,28 @@ class DeepDarkness extends Enemy {
     waveCount = 90;
     waveAmplitude = 2;
     bodyColor = `rgba(0,0,0,1)`;
-    echoColor = [255, 0, 0, 0.8];
-    expansionSpeed = 4;
-    lineCount = 36;
-    constructor(x, y, name, radius = 120, speed = 0.2) {
+    echoColor = [255, 0, 0, 0.8];    
+    _soundChasing = "bigDark"; // Som tocado enquanto o inimigo está perseguindo
+    _soundChasingId = null; // ID do som tocado enquanto o inimigo está perseguindo
+    _soundVisible = null;
+    _soundEcho = null;
+    _attackRadiusOffset = 0;
+    _attackForce = 30; 
+    _distanceToAttack = 500;
+    constructor(x, y, name, radius = 100, speed = 0.4) {
         super(x, y, name, "radar", radius, speed);
     }    
 
-    emitAttack() {                        
-        // Emite um inimigo adiconal do tipo littleDarkness, como se fosse um filho e este inimigo já é criado com o chassing = true e o chassingpoint atual setado para a posição do player
-        if (this._lastAttack == 0 || Date.now() - this._lastAttack >= 3000) {
-            console.log("Ataque emitido");
-            super.emitAttack();      
-            const littleDarkness = new LittleDarkness(this.x, this.y, "Tinny Darkness", 10, 0.8);
-            littleDarkness.visible = true;
-            littleDarkness.chassing = true;
-            littleDarkness.chassingPoint = { x: game.player.x, y: game.player.y };
-            game.map.enemies.push(littleDarkness);
-
-            // Adiciona o littleDarkness ao navGrid do mapa
-            littleDarkness.navGrid = game.map.generateNavGrid(config.CELL_SIZE, littleDarkness.radius / 4);        
-        }
+    emitSecondaryAttack() {                        
+        super.emitSecondaryAttack();      
+        const littleDarkness = new LittleDarkness(this, this.x, this.y);
+        console.log(` |-> Carregando inimigo: ${littleDarkness.name}`);
+        littleDarkness.visible = true;
+        littleDarkness.chasing = true;
+        littleDarkness.chasingPoint = { x: game.player.x, y: game.player.y };            
+        littleDarkness.navGrid = game.map.generateNavGrid(config.CELL_SIZE, littleDarkness.radius / 4);
+        game.map.enemies.push(littleDarkness);
+        this._lastAttack = Date.now(); // Atualiza o tempo do último ataque
     };
 
     // Desenha um círculo ondulado
@@ -49,6 +50,8 @@ class DeepDarkness extends Enemy {
     }
 
     draw() {
+        if (!this.visible) return; // Se o inimigo não estiver visível, não desenha nada
+
         // Desenha os círculos ondulados
         const circle1Radius = this.radius;
         const circle2Radius = this.radius + 5;
