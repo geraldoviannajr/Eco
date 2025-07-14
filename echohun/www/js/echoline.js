@@ -39,10 +39,23 @@ class EchoLine {
   // Move a linha de eco, verifica colisões e atualiza o estado
   update() {
     if (this.bounces < 0) return;
-
+    
     const age = Date.now() - this.createdAt;
-    const progress = Math.min(1, age / this.duration);
-    const dynamicSpeed = this.expansionSpeed * (1 - progress * 0.5);
+    var dynamicSpeed = this.expansionSpeed;
+    var dynamicDuration = this.duration;
+    
+    // Se o inimigo estiver em modo de busca no perímetro, emite um eco mais lento e mais curto
+    if (this.type == "enemy" &&       
+        this.enemy != null && 
+        this.enemy._hasEcho &&
+        this.enemy.seeking) 
+    {
+      dynamicDuration = (dynamicDuration * 0.3); // 20% da duração original
+      //dynamicSpeed = this.expansionSpeed * (1 - (Math.min(1, age / dynamicDuration)) * 0.5);
+      //dynamicSpeed = (dynamicSpeed * 0.1); // 10% da velocidade original de expansão
+    }
+    else
+      dynamicSpeed = this.expansionSpeed * (1 - (Math.min(1, age / dynamicDuration)) * 0.5);              
 
     const dx = Math.cos(this.angle) * dynamicSpeed;
     const dy = Math.sin(this.angle) * dynamicSpeed;
@@ -87,13 +100,14 @@ class EchoLine {
     this.x = nextX;
     this.y = nextY;
 
-    // Checa se passou pela porta para revelá-la
+    // Checa se passou pela porta para revelá-la, offset de 20px    
     if (!this.doorTouched) {
+      const doorOffSet = 20;
       if (
-        this.x >= game.map.exitDoor.x &&
-        this.x <= game.map.exitDoor.x + game.map.exitDoor.width &&
-        this.y >= game.map.exitDoor.y &&
-        this.y <= game.map.exitDoor.y + game.map.exitDoor.height
+        this.x >= (game.map.exitDoor.x - doorOffSet) &&
+        this.x <= (game.map.exitDoor.x + game.map.exitDoor.width + doorOffSet) &&
+        this.y >= (game.map.exitDoor.y - doorOffSet) &&
+        this.y <= (game.map.exitDoor.y + game.map.exitDoor.height + doorOffSet)
       ) {
         this.doorTouched = true;
         game.map.exitDoor.touchingLines++;
@@ -126,8 +140,18 @@ class EchoLine {
   // Se for um inimigo, usa a cor do inimigo
   draw() {
     const age = Date.now() - this.createdAt;
-    const alpha = Math.max(0, 1 - age / this.duration);
+    var alpha = Math.max(0, 1 - age / this.duration);
     if (alpha <= 0) return;
+
+    // Se o inimigo estiver em modo de busca no perímetro, emite um eco mais lento e mais curso
+    if (this.type == "enemy" &&       
+        this.enemy != null && 
+        this.enemy._hasEcho &&
+        this.enemy.seeking) 
+    {
+      alpha = 0.8;
+    }
+
 
     game.ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
 

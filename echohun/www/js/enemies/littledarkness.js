@@ -2,10 +2,12 @@ class LittleDarkness extends Enemy {
     parent = null; // Referência ao inimigo pai (DeepDarkness)
     bodyColor = `rgba(130,20,30,1)`;
     radius = 5;    
+    speed = 0.9;
     _attackRadiusOffset = 2;
-    _attackForce = 3; 
+    _attackForce = 3;
+    _hasEcho = false;     
     constructor(parent, x, y, name, radius = 1, speed = 0.9) {        
-        super(x, y, name, "radar", radius, speed);
+        super(x, y, name, false, radius, speed);
         this.parent = parent; // Define o inimigo pai
     }  
     draw() {

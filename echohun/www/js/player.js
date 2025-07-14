@@ -17,6 +17,7 @@ class Player {
   radius = 8; // Raio de colisão do jogador
   navGrid = []; // Grade de navegação para o jogador
   lastUpdateTime = 0; // Tempo do último update
+  _lastSuffering = 0; // Tempo desde o último dano
 
   // Construtor da classe Player
   // Define a posição inicial do jogador, a velocidade de caminhada e outras propriedades iniciais
@@ -83,8 +84,7 @@ class Player {
     // Verifica se o jogador tem stamina suficiente para começar a correr
     if (!this.isRunning && this.stamina >= config.MIN_STAMINA_RUN) {
       if (game.isMousePressed) {
-        if (!this.wasIdle && (now - game.mousePressStart > config.RUN_THRESHOLD)
-        )
+        if (!this.wasIdle && (now - game.mousePressStart > config.RUN_THRESHOLD))
           isRunning = true;
       } else {
         for (const key in game.keyPressTimes) {
@@ -127,7 +127,7 @@ class Player {
     }
     moved = this.x !== prevX || this.y !== prevY;
 
-    if (moved) {
+    if (moved || this.forceNextStep) {
       if (millisecondsDifference >= this.speed || this.forceNextStep) {
         this.lastEcho = Date.now();
         this.forceNextStep = false;
@@ -169,6 +169,7 @@ class Player {
   
   suffering(force = 10) {
     this.hp -= force;
+    this._lastSuffering = Date.now();
     if (this.hp <= 0) {
       this.isDead = true;
       this.hp = 0;

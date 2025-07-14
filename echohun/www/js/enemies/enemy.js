@@ -2,7 +2,6 @@ class Enemy {
   x = 0;
   y = 0;
   name = "Inimigo"; // Nome do inimigo
-  type = "echo"; // Tipo do inimigo, pode ser 'echo' ou 'radar'
   createdAt = Date.now(); // Data de criação do inimigo
   waveCount = 90; // Contagem de ondas para o efeito de radar
   waveAmplitude = 2; // Amplitude da onda para o efeito de radar
@@ -36,16 +35,18 @@ class Enemy {
   _soundAttack = ""; // Nome do som do inimigo, usado para tocar o som de ataque
   _soundChasing = ""; // Nome do som do inimigo, usado enquanto estiver em perseguição
   _lastTimeChasing = 0; // Último marcador que o inimigo realizou movimento de perseguição
-  _lastTimeSeeking = 0; // Último tempo que o inimigo realizou movimento de busca no perímetro
-  _seekCooldown = 10000; // Tempo para busca no perímetro, 
+  _timeStartSeeking = 0; // Momento no qual o o inimigo iniciou a busca no perímetro
+  _lastSeekMove = 0; // Último movimento de busca
+  _seekCooldown = 15000; // Tempo para busca no perímetro, 
+  _hasEcho = true;
 
   // Construtor da classe Enemy
   // Recebe as coordenadas x e y, tipo, tamanho e velocidade do inimigo
-  constructor(x, y, name = 'Enemy', type = "echo", radius = 5, speed = 0.4) {
+  constructor(x, y, name = 'Enemy', hasEcho = true, radius = 5, speed = 0.4) {
     this.x = x;
     this.y = y;
     this.name = name;
-    this.type = type;
+    this._hasEcho = hasEcho;
     this.radius = radius;
     this.speed = speed;
   }
@@ -63,11 +64,9 @@ class Enemy {
   }
 
   seek(x, y) {
-    if (this.visible) {
-      if (this.seeking)
-        console.log(`Atualizando busca: ${this.name}`)
-      else 
-        console.log(`Iniciando busca: ${this.name}`);
+    if (this.visible) {      
+      if (!this.seeking)
+        this._timeStartSeeking = Date.now();
 
       // Procura uma célula livre ao redor
       const oricell = convertToCellCoordinates(x, y);
@@ -79,8 +78,7 @@ class Enemy {
       } 
       // inicia movimento suave até próxima célula
       else 
-      {
-        this.emitEcho();
+      {        
         nextcell = convertToWorldCoordinates(nextcell);        
         this.seekPoint = { x: nextcell.x, y: nextcell.y };
         console.log(`Indo até próx. célula livre: ${this.name} = ${this.seekPoint.x} , ${this.seekPoint.y}`);
@@ -89,7 +87,10 @@ class Enemy {
         this.visible = false;
         this.chasingPoint.x = 0;
         this.chasingPoint.y = 0;
-        this.chasingPath = [];
+        this.chasingPath = [];        
+        this._lastSeekMove = Date.now();
+        if (this._hasEcho)
+          this.emitEcho();
       }
     }
   }
@@ -113,16 +114,21 @@ class Enemy {
   }
 
   emitEcho() {
-    if (this._soundEcho != "") { game.sounds.play(this._soundEcho); }
+    if (!this._hasEcho) 
+      return;
+
+    if (this._soundEcho != "") 
+      game.sounds.play(this._soundEcho);
 
     for (let i = 0; i < this.lineCount; i++) {
       const angle = ((Math.PI * 2) / this.lineCount) * i;      
       var x = this.x;
       var y = this.y; 
 
+      /*
       if (this.radius > 1) {
         x = this.x + Math.cos(angle) * (this.radius);
-        y = this.y + Math.sin(angle) * (this.radius); 
+        y = this.y + Math.sin(angle) * (this.radius);         
 
         if (isWallColliding(x, y, this.radius)) {
           // Se colidir com parede, ajusta a posição para evitar que o eco nasça dentro da parede
@@ -137,6 +143,7 @@ class Enemy {
           }        
         } 
       }
+      */
            
       game.lines.push( new EchoLine(x, y, angle, "enemy", this, 3) );
     }
@@ -279,7 +286,7 @@ class Enemy {
         if (tipoMov == 'chasingPath' && this.chasingPath != null && this.chasingPath.length > 1) { this.chasingPath.splice(1, 1); }
 
         // Verifica se precisa emitir eco
-        if ( (this instanceof Darkness && (now - this.lastEcho) >= this._miliSecBetweenEchos) || this.forceNextStep ) {
+        if ( (this._hasEcho && (now - this.lastEcho) >= this._miliSecBetweenEchos) || this.forceNextStep ) {
           this.lastEcho = now;
           this.forceNextStep = false;          
           this.emitEcho();
@@ -320,12 +327,13 @@ class Enemy {
     {
       this.visible = true;
       // Verifica se o tempo de cooldown de busca já passou, se passou encerra a busca 
-      if (this._lastTimeSeeking > 0 && (now - this._lastTimeSeeking) > this._seekCooldown) {
+      if (this._timeStartSeeking > 0 && (Date.now() - this._timeStartSeeking) > this._seekCooldown) {
         console.log(`Encerrando busca: ${this.name}`);
         this.seeking = false;
         this.visible = false;
         this.seekPoint = {x: 0, y: 0 };
-        this._lastTimeSeeking = 0;
+        this._timeStartSeeking = 0;
+        this._lastSeekMove = 0;
       } 
       // Se o tempo ainda permite, dá prosseguimento a varredura
       else {        
@@ -333,9 +341,9 @@ class Enemy {
         const dy = this.seekPoint.y - this.y;
         const dist = Math.hypot(dx, dy);
 
-        if (dist > 1) { // Move suavemente em direção ao target (com 30% da velocidade normal)
-          nextX += (dx / dist) * (this.speed * 0.3);
-          nextY += (dy / dist) * (this.speed * 0.3);
+        if (dist > 1) { // Move suavemente em direção ao target (com 10% da velocidade normal)
+          nextX += (dx / dist) * (this.speed * 0.8);
+          nextY += (dy / dist) * (this.speed * 0.8);
         } else { // Se já está muito próximo, pode avançar para o ponto final
           nextX = this.seekPoint.x;
           nextY = this.seekPoint.y;
@@ -343,9 +351,10 @@ class Enemy {
         this.moveTo(nextX, nextY);
         moved = this.x !== prevX || this.y !== prevY;
         // Se não está se movendo prepara próximo ponto de busca;
-        if (!moved) { this.seek(this.x, this.y); }
+        if (!moved && (Date.now() - this._lastSeekMove > 200)) { 
+          this.seek(this.x, this.y); 
+        }
       }
-      this._lastTimeSeeking = Date.now();
     }     
 
     // Verifica e atualiza os sons
@@ -361,7 +370,7 @@ class Enemy {
     }  
   }
 
-  draw() {   
+  draw() {      
     if (!this.visible && !config.DEBUG) return; // Se o inimigo não estiver visível, não desenha nada
     if (config.DEBUG) {        
       game.ctx.save();

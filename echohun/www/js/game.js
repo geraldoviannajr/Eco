@@ -14,6 +14,7 @@ class Game {
   isPaused = false;
   idTouchPlayerMove = -1; // Idetificador do toque que move o jogador, -1 significa nenhum toque ativo
   hud = new HUD();
+  sonar = new Sonar();
   fps = 0; // Frames per second  
   _framesThisSecond = 0;
   _lastFpsUpdate = performance.now();    
@@ -268,6 +269,7 @@ class Game {
 
     this.ctx.save();    
     this.hud.draw();
+    this.sonar.draw();
 
     this.ctx.textAlign = "left";
     this.ctx.textBaseline = "top";
@@ -324,7 +326,6 @@ class Game {
     }
     this.updateLines();      
   };
-
   animate = () => {
     if (this._lastFpsUpdate === 0) {
       this._lastFpsUpdate = now; // Initialize on first run

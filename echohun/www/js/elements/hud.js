@@ -1,4 +1,7 @@
 class HUD {
+    x = 30;
+    y = 30;
+    radius = 22;
     constructor() { }
 
     draw = () => {
@@ -9,9 +12,9 @@ class HUD {
         const staminaPercent = window.game.player.stamina; 
         const level = window.game.map.level;
         
-        const centerX = 30;
-        const centerY = 30;
-        const radius = 18;
+        const centerX = this.x;
+        const centerY = this.y;
+        const radius = this.radius;
         const lineWidth = 5;
 
         // === Fundo (opcional)

@@ -1,5 +1,4 @@
 class Sounds {
-    ids = [];
     constructor() {
         this.loadSounds();
     }
@@ -50,43 +49,36 @@ class Sounds {
 
         var name  = name_and_srite.split(".")[0];
         var sprite = name_and_srite.split(".")[1] || null;
-        var newid = -1;
+        var newid = -1;       
 
-        if (this.sounds[name]) {
-            if (id > 0) {
-              if (!forcenew && this.sounds[name].playing(id)) {
-                //console.warn(`Sound "${name}"-"${sprite}" is already playing.`);
-                return null;
+        if (this.sounds[name]) {            
+          if (id > 0) {
+            if (!forcenew && this.sounds[name].playing(id)) {
+              //console.warn(`Sound "${name}"-"${sprite}" is already playing.`);
+              return null;
+            } else {
+              //console.warn(`Stop and play againg sound: "${name}"-"${sprite}".`);              
+              this.sounds[name].stop(id);
+              if (sprite != null) {
+                newid = this.sounds[name].play(sprite, id);
+                return newid;
               } else {
-                //console.warn(`Stop and play againg sound: "${name}"-"${sprite}".`);
-                let idx = this.ids.indexOf(id);
-                if (idx > -1)
-                  this.ids.splice(idx, 1);
-                this.sounds[name].stop(id);
-                if (sprite != null) {
-                  newid = this.sounds[name].play(sprite, id);
-                  if (newid > 0) { this.ids.push([name, newid]); }
-                  return newid;
-                } else {
-                  newid = this.sounds[name].play(id);
-                  if (newid > 0) { this.ids.push([name, newid]); }
-                  return newid;
-                }
+                newid = this.sounds[name].play(id);
+                return newid;
               }
             }
+          }
 
-            //console.log(`Playing sound: "${name}"-"${sprite}"`);
+          //console.log(`Playing sound: "${name}"-"${sprite}"`);
 
-            if (sprite != null) {
-              newid = this.sounds[name].play(sprite);
-              if (newid > 0) { this.ids.push([name, newid]); }
-              return newid;
-            }
-            else {
-              newid = this.sounds[name].play();
-              if (newid > 0) { this.ids.push([name, newid]); }
-              return newid;
-            }
+          if (sprite != null) {
+            newid = this.sounds[name].play(sprite);
+            return newid;
+          }
+          else {
+            newid = this.sounds[name].play();
+            return newid;
+          }
         } else {
             console.warn(`Sound "${name}"-"${sprite}" not found.`);
         }
@@ -98,15 +90,22 @@ class Sounds {
     }
 
     pauseAll() {
-      for (const id in this.ids) {
-          this.sounds[id[0]].pause(id[1]);
-      }
+      Howler._howls.forEach(howl => {
+        howl._sounds.forEach(sound => {
+          if (!sound._paused && !sound._ended) {
+            howl.pause(sound._id);
+          }
+        });
+      });
     }
 
     resumeAll() {
-      for (const id in this.ids) {
-          this.sounds[id[0]].play(id[1]);
-      }
+      Howler._howls.forEach(howl => {
+        howl._sounds.forEach(sound => {
+          if (sound._paused && !sound._ended) {
+            howl.play(sound._id);
+          }
+        });
+      });
     }
-
 }

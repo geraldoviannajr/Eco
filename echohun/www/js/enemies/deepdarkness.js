@@ -1,6 +1,7 @@
 class DeepDarkness extends Enemy {
     waveCount = 90;
     waveAmplitude = 2;
+    speed = 0.1;
     bodyColor = `rgba(0,0,0,1)`;
     echoColor = [255, 0, 0, 0.8];    
     _soundChasing = "bigDark"; // Som tocado enquanto o inimigo está perseguindo
@@ -10,8 +11,9 @@ class DeepDarkness extends Enemy {
     _attackRadiusOffset = 0;
     _attackForce = 30; 
     _distanceToAttack = 500;
+    _hasEcho = false;
     constructor(x, y, name, radius = 100, speed = 0.4) {
-        super(x, y, name, "radar", radius, speed);
+        super(x, y, name, false, radius, speed);
     }    
 
     emitSecondaryAttack() {                        

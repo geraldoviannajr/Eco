@@ -91,16 +91,147 @@ class Map {
     }
   };
 
-  drawExitDoor = () => {
+  
+  drawExitDoor = () => {    
     if (!this.exitDoor.visible) return;
-    game.ctx.fillStyle = config.DOOR_COLOR;
-    game.ctx.fillRect(
-      this.exitDoor.x - game.camera.x,
-      this.exitDoor.y - game.camera.y,
-      this.exitDoor.width,
-      this.exitDoor.height
-    );
+
+    const ctx = game.ctx;
+    const x = this.exitDoor.x - game.camera.x;
+    const y = this.exitDoor.y - game.camera.y;
+    const w = this.exitDoor.width;
+    const h = this.exitDoor.height;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const time = performance.now() * 0.002;
+
+    ctx.save();
+
+    // Background da porta 
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.fillStyle = "rgba(121, 121, 121, 0.938)";
+    ctx.fill();
+
+    /*
+    // Porta retangular central brilhante e pulsante
+    const pulse = Math.sin(time * 2) * 6;
+    ctx.beginPath();
+    ctx.rect(x - pulse * 0.5, y - pulse, w + pulse, h + pulse * 2);
+    ctx.fillStyle = "rgba(255,255,220,0.92)";
+    ctx.shadowColor = "#fffbe8";
+    ctx.shadowBlur = 32 + 16 * Math.abs(Math.sin(time));
+    ctx.fill();
+    */
+
+    /*
+    // Arcos translúcidos horizontais e verticais (como "ondas" de luz)
+    for (let i = 0; i < 3; i++) {
+        const arcOffset = 24 + i * 22 + Math.sin(time * 1.5 + i) * 8;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, w / 2 + arcOffset, h / 2 + arcOffset, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,220,${0.13 - i * 0.03})`;
+        ctx.lineWidth = 10 - i * 2;
+        ctx.shadowBlur = 18 - i * 5;
+        ctx.stroke();
+    }
+    */
+
+    // Feixes de luz animados saindo da porta em direção ao player
+    const rayCount = 16;
+    const playerAngle = Math.atan2(game.player.y - (this.exitDoor.y + h / 2), game.player.x - (this.exitDoor.x + w / 2));
+    for (let i = 0; i < rayCount; i++) {
+        // Espalha os feixes em torno da direção do player
+        const spread = Math.PI / 4;
+        const angle = playerAngle + (i - rayCount / 2) * (spread / rayCount) + Math.sin(time * 1.2 + i) * 0.07;
+        const rayLen = 120 + Math.sin(time * 2 + i) * 18;
+        ctx.save();
+        ctx.globalAlpha = 0.18 + 0.08 * Math.sin(time * 2 + i);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(
+            cx + Math.cos(angle) * (w / 2 + rayLen),
+            cy + Math.sin(angle) * (h / 2 + rayLen)
+        );
+        ctx.strokeStyle = "#fffbe8";
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 16;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // Núcleo da porta ainda mais intenso
+    ctx.beginPath();
+    ctx.rect(x + w * 0.25, y + h * 0.25, w * 0.5, h * 0.5);
+    ctx.fillStyle = "rgba(255,255,255,0.97)";
+    ctx.shadowBlur = 0;
+    ctx.fill();
+
+    ctx.restore();
   };
+  /*
+  drawPortal = () => {    
+    if (!this.exitDoor.visible) return;
+
+    const ctx = game.ctx;
+    const cx = this.exitDoor.x + this.exitDoor.width / 2 - game.camera.x;
+    const cy = this.exitDoor.y + this.exitDoor.height / 2 - game.camera.y;
+    const baseRadius = Math.max(this.exitDoor.width, this.exitDoor.height) * 0.45;
+    const time = performance.now() * 0.002;
+
+    ctx.save();
+
+    // Pulsação do círculo central
+    const pulse = Math.sin(time * 2) * 6;
+
+    // Círculo central brilhante
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseRadius + pulse, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,200,0.85)";
+    ctx.shadowColor = "#fffbe8";
+    ctx.shadowBlur = 32 + 16 * Math.abs(Math.sin(time));
+    ctx.fill();
+
+    // Auras/Arcos translúcidos
+    for (let i = 0; i < 3; i++) {
+        const auraRadius = baseRadius + 18 + i * 18 + Math.sin(time * 1.5 + i) * 6;
+        ctx.beginPath();
+        ctx.arc(cx, cy, auraRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,220,${0.18 - i * 0.04})`;
+        ctx.lineWidth = 8 - i * 2;
+        ctx.shadowBlur = 24 - i * 6;
+        ctx.stroke();
+    }
+
+    // Raios suaves
+    const rayCount = 16;
+    for (let i = 0; i < rayCount; i++) {
+        const angle = (2 * Math.PI * i) / rayCount + time * 0.5;
+        const rayLen = baseRadius * 1.7 + Math.sin(time * 2 + i) * 12;
+        ctx.save();
+        ctx.globalAlpha = 0.13 + 0.07 * Math.sin(time * 2 + i);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(
+            cx + Math.cos(angle) * rayLen,
+            cy + Math.sin(angle) * rayLen
+        );
+        ctx.strokeStyle = "#fffbe8";
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 12;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // Círculo central mais intenso (núcleo)
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseRadius * 0.45 + pulse * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    ctx.shadowBlur = 0;
+    ctx.fill();
+
+    ctx.restore();
+  };
+  */
 
   drawEnemies = () => {
     for (const enemy of this.enemies) {
