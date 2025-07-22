@@ -27,7 +27,7 @@ class Camera {
         else {game.camera.y = game.player.y - game.canvas.height / 2;}
 
         if (this.shakeTime > 0) {
-            this.shakeTime -= game._deltaTime;
+            this.shakeTime -= game.deltaTime;
             const angle = Math.random() * Math.PI * 2;
             const intensity = this.shakeIntensity * (this.shakeTime / this.shakeDuration);
             this.x += Math.cos(angle) * intensity;

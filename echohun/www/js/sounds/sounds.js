@@ -8,27 +8,32 @@ class Sounds {
       this.sounds = {
         step: new Howl({
           src: ['/assets/sounds/step1.mp3'],
-          html5 : true,
+          html5 : false,
           volume: 0.3
         }),
         run: new Howl({
           src: ['/assets/sounds/step1.mp3'],
-          html5 : true,
-          volume: 1
+          html5 : false,
+          volume: 0.3
+        }),
+        enemy_echo: new Howl({
+          src: ['/assets/sounds/step1.mp3'],
+          html5 : false,
+          volume: 0
         }),
         clap: new Howl({
           src: ['/assets/sounds/clap1.mp3'],
-          html5 : true,
+          html5 : false,
           volume: 0.5
         }),
-        bigDark: new Howl({
+        ddChasing: new Howl({
           src: ['/assets/sounds/bigdark.mp3'],
-          html5 : true,
-          volume: 1
+          html5 : false,
+          volume: 0
         }),
         scream: new Howl({
           src: ['/assets/sounds/scream.mp3'],
-          html5 : true,
+          html5 : false,
           sprite: {
             dead: [521, 3408],
             dead2: [3861, 6870],
@@ -37,7 +42,15 @@ class Sounds {
             hurt3: [10835, 11948],
             hurt4: [12348, 13409]
           },          
-          volume: 1
+          volume: 0.1
+        }),
+        beep: new Howl({
+          src: ['/assets/sounds/beep.mp3'],
+          html5 : false,
+          volume: 0,
+          sprite: {
+            echo: [780, 1100],
+          },          
         }),
       };
     }
@@ -84,6 +97,38 @@ class Sounds {
         }
     }
 
+    stop(name_and_srite, id = 0) {      
+      if (name_and_srite == null)
+        return null;
+
+      var name  = name_and_srite.split(".")[0];
+      var sprite = name_and_srite.split(".")[1] || null;
+      var newid = -1;       
+
+      if (this.sounds[name]) {            
+        if (id > 0) {
+          if (!this.sounds[name].playing(id)) {
+            return null;
+          } else {
+            this.sounds[name].stop(id);
+          }
+        }
+
+        //console.log(`Stoping sound: "${name}"-"${sprite}"`);
+
+        if (sprite != null) {
+          this.sounds[name].stop(sprite);
+          return null;
+        }
+        else {
+          this.sounds[name].stop();
+          return null;
+        }
+      } else {
+          console.warn(`Sound "${name}"-"${sprite}" not found.`);
+      }
+  }
+
     isPlaying(name, id) {
       if (this.sounds[name]) { return (this.sounds[name].playing(id)); }
       return false;
@@ -107,5 +152,9 @@ class Sounds {
           }
         });
       });
+    }
+
+    getSound(name) {
+      return this.sounds[name];
     }
 }

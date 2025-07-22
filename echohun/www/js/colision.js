@@ -82,3 +82,19 @@ function segmentsIntersect(p1, p2, q1, q2) {
 
   return 0 < lambda && lambda < 1 && 0 < gamma && gamma < 1;
 }
+
+function isCircleColliding(x1, y1, r1, x2, y2, r2) {
+  const dx = x1 - x2;
+  const dy = y1 - y2;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  return distance <= r1 + r2;
+}
+
+function isRectColliding(x1, y1, w1, h1, x2, y2, w2, h2) {
+  return (
+      x1 < x2 + w2 &&
+      x1 + w1 > x2 &&
+      y1 < y2 + h2 &&
+      y1 + h1 > y2
+  );
+}

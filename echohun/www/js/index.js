@@ -44,13 +44,14 @@ function onDeviceReady() {
 
   window.plugins.screensize.get( (screensz) => {
       window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);
+      window.game.language = new Language('pt_br');
 
       window.game.map = new Map1();
       window.game.map.load();
       window.game.addEvents();
 
       document.addEventListener("pause",() => {window.game.pause();},false);
-      document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false);
+      //document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false);
       
       window.addEventListener("resize", resizeCanvas);
       

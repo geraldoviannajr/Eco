@@ -6,7 +6,9 @@ class Map {
   width = 0;
   height = 0;
   mapStarted = false;
+  objects = [];
   walls = []; 
+  enemies = [];  
   exitDoor = {
     x: 0,
     y: 0,
@@ -14,8 +16,7 @@ class Map {
     height: 0,
     visible: false,
     touchingLines: 0,
-  };
-  enemies = [];  
+  };  
 
   constructor(w, h) {
     this.width = w;
@@ -56,13 +57,23 @@ class Map {
     }
     console.log(` |-> Carregando player`);
     game.player.navGrid = this.generateNavGrid(config.CELL_SIZE, game.player.radius);
+    this.objects.push(game.player);
+    for (const enemy of this.enemies) {
+      this.objects.push(enemy);
+    }
     this.mapStarted = true;
   }
 
   draw() {
+    if (config.DEBUG) {
+      for (const object of this.objects) {
+        object.drawHitbox();
+      }
+    }
+
     this.drawWalls();
     this.drawExitDoor();
-    this.drawEnemies();
+    this.drawObjects();
   }
 
   update() {
@@ -72,6 +83,9 @@ class Map {
         game.player.y >= this.exitDoor.y &&
         game.player.y <= this.exitDoor.y + this.exitDoor.height) {
       this.exit();
+    }
+    for (const obj of this.objects) {
+      obj.update();
     }
   }
 
@@ -233,9 +247,9 @@ class Map {
   };
   */
 
-  drawEnemies = () => {
-    for (const enemy of this.enemies) {
-      enemy.draw();
+  drawObjects = () => {
+    for (const obj of this.objects) {
+      obj.draw();
     }
   };
 

@@ -1,7 +1,8 @@
-class Player {
+class Player extends MapObject {
   x = 0;
   y = 0;
-  speed = 0;
+  radius = 8; 
+  name = 'Player';    
   lastStepX = 0;
   lastStepY = 0;
   wasIdle = true;
@@ -9,29 +10,28 @@ class Player {
   isRunning = false;
   isWalk = false;
   isDead = false;
-  lastEcho = 0;
-  hp = 100; // 100 é o máximo de hp
-  stamina = 100; // 100 é o máximo de stamina
+  lastEcho = performance.now();
+  hp = config.PLAYER_MAX_HP;
+  maxHp = config.PLAYER_MAX_HP;
+  stamina = config.PLAYER_MAX_STAMINA;
+  maxStamina = config.PLAYER_MAX_STAMINA;
   staminaRegen = 5; // Regeneração de stamina por segundo
-  staminaCost = 10; // Custo de stamina por segundo ao correr
-  radius = 8; // Raio de colisão do jogador
-  navGrid = []; // Grade de navegação para o jogador
-  lastUpdateTime = 0; // Tempo do último update
+  staminaCost = 10; // Custo de stamina por segundo ao correr  
+  navGrid = []; // Grade de navegação para o jogador  
   _lastSuffering = 0; // Tempo desde o último dano
+  bag = new Bag();
 
   // Construtor da classe Player
   // Define a posição inicial do jogador, a velocidade de caminhada e outras propriedades iniciais
   constructor(x, y) {
+    super(x,y);
     this.x = x;
     this.y = y;
+    this.radius = 8;
+    this.name = 'Player';
     this.speed = config.WALK_SPEED;
-    this.lastStepX = 0;
-    this.lastStepY = 0;
-    this.wasIdle = true;
-    this.forceNextStep = false;
-    this.isRunning = false;
-    this.isWalk = false;
-    this.lastEcho = Date.now();
+    this.createCircleHitbox(0, 0, this.radius +1);
+    this.lastUpdate = performance.now();
   }
 
   moveTowardMouse(stepdistance) {
@@ -60,22 +60,26 @@ class Player {
   };  
 
   update() {   
-    const now = Date.now();
+    super.update();
+    
+    const now = window.game.gameTime;
     const millisecondsDifference = now - this.lastEcho;
 
-    if (this.lastUpdateTime != 0) {
+    if (this.lastUpdate != 0) {
       if (this.isRunning) {
-        this.stamina -= this.staminaCost * ((now - this.lastUpdateTime) / 1000);
+        this.stamina -= this.staminaCost * ((now - this.lastUpdate) / 1000);
       } else {
-        this.stamina += this.staminaRegen * ((now - this.lastUpdateTime) / 1000);
+        this.stamina += this.staminaRegen * ((now - this.lastUpdate) / 1000);
       }
 
-      if (this.stamina > config.MAX_STAMINA) {
-        this.stamina = config.MAX_STAMINA;
+      if (this.stamina > config.PLAYER_MAX_STAMINA) {
+        this.stamina = config.PLAYER_MAX_STAMINA;
       } else if (this.stamina <= 0) {
         this.stamina = 0;
         this.isRunning = false; // Se a stamina acabar, não pode correr        
       }
+    } else {
+      this.lastUpdate = window.game.gameTime;
     }
 
     let maxHeld = 0;
@@ -129,7 +133,7 @@ class Player {
 
     if (moved || this.forceNextStep) {
       if (millisecondsDifference >= this.speed || this.forceNextStep) {
-        this.lastEcho = Date.now();
+        this.lastEcho = window.game.gameTime;
         this.forceNextStep = false;
         this.emitEcho(isRunning ? "run" : "walk");
       }
@@ -139,18 +143,8 @@ class Player {
 
     this.wasIdle = !moved && Object.keys(game.keys).length === 0 && !game.isMousePressed;
     this.isRunning = !this.wasIdle && isRunning;
-    this.lastUpdateTime = Date.now();
+    this.lastUpdate = window.game.gameTime;
     this.isWalk = !this.wasIdle;
-
-    if (config.DEBUG) {
-      game.ctx.save();
-      game.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
-      game.ctx.beginPath();
-      game.ctx.arc(this.x - game.camera.x, this.y - game.camera.y, this.radius, 0, Math.PI * 2);
-      game.ctx.fill();
-      game.ctx.stroke();
-      game.ctx.restore();
-    }
   }
 
   emitEcho(type = "walk") {
@@ -169,7 +163,7 @@ class Player {
   
   suffering(force = 10) {
     this.hp -= force;
-    this._lastSuffering = Date.now();
+    this._lastSuffering = performance.now();
     if (this.hp <= 0) {
       this.isDead = true;
       this.hp = 0;
@@ -184,5 +178,9 @@ class Player {
       game.sounds.play("scream.hurt");
       console.log(`Player sofreu dano: ${force}. HP restante: ${this.hp}`);
     }
+  }
+
+  draw() {
+    super.draw();
   }
 }

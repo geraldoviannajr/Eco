@@ -1,10 +1,9 @@
 class DeepDarkness extends Enemy {
     waveCount = 90;
     waveAmplitude = 2;
-    speed = 0.1;
     bodyColor = `rgba(0,0,0,1)`;
     echoColor = [255, 0, 0, 0.8];    
-    _soundChasing = "bigDark"; // Som tocado enquanto o inimigo está perseguindo
+    _soundChasing = game.sounds.getSound('ddChasing'); // Som tocado enquanto o inimigo está perseguindo
     _soundChasingId = null; // ID do som tocado enquanto o inimigo está perseguindo
     _soundVisible = null;
     _soundEcho = null;
@@ -14,6 +13,7 @@ class DeepDarkness extends Enemy {
     _hasEcho = false;
     constructor(x, y, name, radius = 100, speed = 0.4) {
         super(x, y, name, false, radius, speed);
+        this.createCircleHitbox(0, 0, this.radius + 3);
     }    
 
     emitSecondaryAttack() {                        
@@ -25,7 +25,8 @@ class DeepDarkness extends Enemy {
         littleDarkness.chasingPoint = { x: game.player.x, y: game.player.y };            
         littleDarkness.navGrid = game.map.generateNavGrid(config.CELL_SIZE, littleDarkness.radius / 4);
         game.map.enemies.push(littleDarkness);
-        this._lastAttack = Date.now(); // Atualiza o tempo do último ataque
+        game.map.objects.push(littleDarkness);
+        this._lastAttack = window.game.gameTime; // Atualiza o tempo do último ataque
     };
 
     // Desenha um círculo ondulado
@@ -57,7 +58,7 @@ class DeepDarkness extends Enemy {
         // Desenha os círculos ondulados
         const circle1Radius = this.radius;
         const circle2Radius = this.radius + 5;
-        const now = Date.now();
+        const now = window.game.gameTime;
 
         this.drawWavyCircle(circle1Radius, 0.002, "rgba(255, 0, 0, 0.5)", 0, now);
         this.drawWavyCircle(circle2Radius,-0.0015,"rgba(255, 50, 50, 0.3)",Math.PI / 2,now);

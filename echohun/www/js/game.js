@@ -13,12 +13,13 @@ class Game {
   mousePressStart = 0;
   isPaused = false;
   idTouchPlayerMove = -1; // Idetificador do toque que move o jogador, -1 significa nenhum toque ativo
-  hud = new HUD();
-  sonar = new Sonar();
+  controls = [];
   fps = 0; // Frames per second  
+  gameTime = 0; // Tempo de jogo em segundos
+  deltaTime = 0; // valor inicial em ms
   _framesThisSecond = 0;
-  _lastFpsUpdate = performance.now();    
-  _deltaTime = 16; // valor inicial em ms  
+  _lastFpsUpdate = performance.now();
+  _lastFrameTime = performance.now();
   constructor(w, h) {
     this.lines = [];
     this.keys = {};
@@ -43,6 +44,8 @@ class Game {
 
     this.player = new Player(0, 0); // Cria o jogador na posição inicial (0, 0);
     this.sounds = new Sounds();
+    this.controls.push(new HUD());
+    this.controls.push(new Radar());
   }
   pause = () => {
     this.isPaused = true;
@@ -58,11 +61,32 @@ class Game {
       this.player.stamina = 0; // Custa todas as staminas
     }
   }
+
+  checkControls = (x, y, doClick = false) => {
+    var mouseX = x;
+    var mouseY = y;
+    if (device.platform != "browser") // Eventos do Touchscreen (mobile)
+    {
+      const rect = this.canvas.getBoundingClientRect();        
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+      mouseX = ((x - rect.left) * scaleX) + this.camera.x;
+      mouseY = ((y - rect.top) * scaleY) + this.camera.y;  
+    }
+    for (const control of this.controls) {
+      if (control.visible && pointInCircle(mouseX, mouseY, control)) {
+        if (doClick == true) 
+          control.click();
+        return true;
+      }
+    }
+    return false;
+  }
   addEvents = () => {
     // === EVENTOS ===
     window.addEventListener("keydown", (e) => {
       if (!(e.key in this.keys)) {
-        this.keyPressTimes[e.key] = Date.now();
+        this.keyPressTimes[e.key] = this.gameTime;
       }
       this.keys[e.key] = true;
     });
@@ -94,40 +118,51 @@ class Game {
 
     if (device.platform == "browser") // Eventos do Mouse (desktop)
     {
-      this.canvas.addEventListener("mousedown", (e) => {
+      this.canvas.addEventListener("mousedown", (e) => {        
         e.preventDefault();
+        if (this.isPaused) { return; }
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
-        const mouseX = ((e.clientX - rect.left) * scaleX) + this.camera.x;
-        const mouseY = ((e.clientY - rect.top) * scaleY) + this.camera.y;
-        this.mouseTarget = { x: mouseX, y: mouseY };
-        this.isMousePressed = true;
-        this.mousePressStart = Date.now();
-        //if (audioContext.state === "suspended") { audioContext.resume(); }
+        const mouseX = ((e.clientX - rect.left) * scaleX);
+        const mouseY = ((e.clientY - rect.top) * scaleY);
+        if (!this.checkControls(mouseX, mouseY, false)) {
+          this.mouseTarget = { x: mouseX + this.camera.x, y: mouseY + this.camera.y };
+          this.mousePos = { x: mouseX, y: mouseY };
+          this.isMousePressed = true;
+          this.mousePressStart = this.gameTime;
+        }
       });
 
       this.canvas.addEventListener("mouseup", (e) => {
         e.preventDefault();
-        this.isMousePressed = false;
-        this.mouseTarget = null;
-        this.player.wasIdle = true;
-        this.player.forceNextStep = true;
+        if (this.isPaused) { this.resume(); return; }
+        if (this.player.isDead) return;
+        else if (this.checkControls(this.mousePos.x, this.mousePos.y, true)) return;
+        else if (!this.player.wasIdle) 
+        {
+          this.isMousePressed = false;
+          this.mouseTarget = null;
+          this.player.wasIdle = true;
+          this.player.forceNextStep = true;
+        }
       });
 
       this.canvas.addEventListener("mousemove", (e) => {
         e.preventDefault();
+        if (this.isPaused) { return; }
+        if (this.player.isDead) return;
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
-        const mouseX = ((e.clientX - rect.left) * scaleX) + this.camera.x;
-        const mouseY = ((e.clientY - rect.top) * scaleY) + this.camera.y;
+        const mouseX = ((e.clientX - rect.left) * scaleX);
+        const mouseY = ((e.clientY - rect.top) * scaleY);
 
         if (this.isMousePressed) {
-          this.mouseTarget = { x: mouseX, y: mouseY };
+          this.mouseTarget = { x: mouseX + this.camera.x, y: mouseY + this.camera.y };
         }
         else {
-          this.mousePos = { x: mouseX, y: mouseY };
+          this.mousePos = { x: mouseX, y: mouseY};
         }
       });
     } 
@@ -135,13 +170,21 @@ class Game {
     {
       this.canvas.addEventListener("touchstart", (e) => {
         e.preventDefault();
+        if (this.isPaused) { return; }
+        if (this.player.isDead) return;
+
+        const touch = e.touches[e.touches.length - 1]; // Armazena o índice do último toque
+        
+        // Verifica se tocou num controle
+        if (this.checkControls(touch.clientX, touch.clientY, false)) 
+          return;
+
         // Se houver dois toques, dispara o clap
         if (e.touches.length == 2)  {
           this.emitClap();
         }
         // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
-        else if (e.touches.length == 1) {
-          const touch = e.touches[e.touches.length - 1]; // Armazena o índice do último toque
+        else if (e.touches.length == 1) {          
           this.idTouchPlayerMove = touch.identifier; // Armazena o ID do toque que move o jogador
 
           const rect = this.canvas.getBoundingClientRect();        
@@ -151,18 +194,24 @@ class Game {
           const mouseY = ((touch.clientY - rect.top) * scaleY) + this.camera.y;
           this.mouseTarget = { x: mouseX, y: mouseY };
           this.isMousePressed = true;
-          this.mousePressStart = Date.now();
+          this.mousePressStart = this.gameTime;
         }
 
       });
 
       this.canvas.addEventListener("touchend", (e) => {
         e.preventDefault();
+        
+        if (this.isPaused) { this.resume(); return; }
+
+        var isMove = false;
+
         if (this.idTouchPlayerMove >= 0) {
           // Verifica se o toque que está sendo liberado é o que move o jogador
           for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i];
             if (touch.identifier === this.idTouchPlayerMove) {
+              isMove = true;
               this.isMousePressed = false;
               this.mouseTarget = null;
               this.player.wasIdle = true;
@@ -172,10 +221,18 @@ class Game {
             }
           }          
         }
+
+        if (!isMove) {
+          this.checkControls(touch.clientX, touch.clientY, true);
+        }
+
       });
 
       this.canvas.addEventListener("touchmove", (e) => {
         e.preventDefault();
+        //if (this.isPaused) { this.resume(); return; }
+        if (this.player.isDead) return;
+
         if (this.isMousePressed && this.idTouchPlayerMove >= 0) {
           // Verifica se o toque que está se movendo é o que move o jogador
           for (let i = 0; i < e.touches.length; i++) {
@@ -202,9 +259,9 @@ class Game {
     this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const message = "** YOU DIED **";
+    const message = "YOU DIED";
     this.ctx.save();
-    this.ctx.font = "48px Horrorfind-gp0Y";
+    this.ctx.font = "62px Horrorfind-gp0Y";
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
 
@@ -218,12 +275,12 @@ class Game {
     this.ctx.restore();
   };
   drawPause = () => {
-    this.ctx.fillStyle = "rgba(0, 0, 255, 0.5)";
+    /*this.ctx.fillStyle = "rgba(0, 13, 201, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const message = "## PAUSED ##";
+    const message = "PAUSED";
     this.ctx.save();
-    this.ctx.font = "48px Horrorfind-gp0Y";
+    this.ctx.font = "62px Horrorfind-gp0Y";
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
 
@@ -232,15 +289,17 @@ class Game {
 
     this.ctx.fillStyle = "white";
     this.ctx.fillText(message, centerX, centerY);
-    this.ctx.restore();
+    this.ctx.restore();*/
+
+    this.player.bag.drawInventory(this.ctx);
   };
   drawMapWin = () => {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const message = "** YOU WIN **";
+    const message = "YOU WIN";
     this.ctx.save();
-    this.ctx.font = "48px Horrorfind-gp0Y";
+    this.ctx.font = "62px Horrorfind-gp0Y";
     this.ctx.textAlign = "center";
     this.ctx.textBaseline = "middle";
 
@@ -253,27 +312,28 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
-  drawInfo = () => {    
+  drawControls = () => {
+    for (const control of this.controls) {
+      control.draw();
+    }
+  }
+  drawInfo = () => {        
     const msg = 
         "FPS: " + this.fps +
         " | Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
         " | Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
-        " | Camera: (" + Math.round(this.camera.x) + ", " + Math.round(this.camera.y) + ")";
+        " | Camera: (" + Math.round(this.camera.x) + ", " + Math.round(this.camera.y) + ")" +
+        " | Mouse: (" + (this.mousePos ? Math.round(this.mousePos.x) : "N/A") + ", " + (this.mousePos ? Math.round(this.mousePos.y) : "N/A") + ")"
+        " | Target: (" + (this.mouseTarget ? Math.round(this.mouseTarget.x) : "N/A") + ", " + (this.mouseTarget ? Math.round(this.mouseTarget.y) : "N/A") + ")"; 
     
       /*
-      " Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
       " Enemy[1]: (" + Math.round(this.map.enemies[0].x) + ", " + Math.round(this.map.enemies[0].y) + ", " + this.map.enemies[0].radius + ")" +
-      " Enemy[2]: (" + Math.round(this.map.enemies[1].x) + ", " + Math.round(this.map.enemies[1].y) + ", " + this.map.enemies[1].radius + ")" +
-      " Mouse: (" + (this.mousePos ? Math.round(this.mousePos.x) : "N/A") + ", " + (this.mousePos ? Math.round(this.mousePos.y) : "N/A") + ")";    
+      " Enemy[2]: (" + Math.round(this.map.enemies[1].x) + ", " + Math.round(this.map.enemies[1].y) + ", " + this.map.enemies[1].radius + ")" +      
       */
 
     this.ctx.save();    
-    this.hud.draw();
-    this.sonar.draw();
-
     this.ctx.textAlign = "left";
     this.ctx.textBaseline = "top";
-
     this.ctx.fillStyle = "white";
     this.ctx.font = "10px Courier New, monospace";
     this.ctx.fillText(msg, 10, this.canvas.height - 20);
@@ -300,7 +360,7 @@ class Game {
             }
             if (enemy.touchingLines <= 0) {
               enemy.touchingLines = 0;
-              enemy.lastDetection = Date.now();
+              enemy.lastDetection = this.gameTime;
             }
           }
         }
@@ -308,7 +368,21 @@ class Game {
       }
     }
     this.map.exitDoor.visible = this.map.exitDoor.touchingLines > 0;
-  };  
+  };
+  checkCollisions = () => {
+    for (let i = 0; i < this.map.objects.length; i++) {
+      for (let j = i + 1; j < this.map.objects.length; j++) {
+        const obj1 = this.map.objects[i];
+        const obj2 = this.map.objects[j];
+        
+        if (obj1.checkCollision(obj2)) {
+          obj1.onCollision(obj2);
+          obj2.onCollision(obj1);
+        }
+      }
+    }    
+  };
+  
   update = () => {
     if (this._flashTime > 0) {
       this._flashTime -= this._deltaTime;
@@ -319,21 +393,27 @@ class Game {
       this.ctx.restore();
     }    
 
-    this.player.update();
     this.map.update();
-    for (const enemy of this.map.enemies) {
-      enemy.update();
-    }
     this.updateLines();      
+    this.camera.update();
+    this.checkCollisions();
   };
   animate = () => {
-    if (this._lastFpsUpdate === 0) {
-      this._lastFpsUpdate = now; // Initialize on first run
+    const now = performance.now();
+    this.deltaTime = now - this._lastFrameTime; // em milissegundos
+    this._lastFrameTime = now;
+
+    // FPS counter
+    this._framesThisSecond++;
+    if (now - this._lastFpsUpdate >= 1000) {
+      this.fps = this._framesThisSecond;
+      this._framesThisSecond = 0;
+      this._lastFpsUpdate = now;
     }
 
     this.drawBackground();
-    this.map.draw();
-    this.drawInfo();
+    this.map.draw();    
+    this.drawControls();
 
     if (this.isPaused) {
       this.drawPause();
@@ -342,18 +422,13 @@ class Game {
     } else if (this.map.mapStarted == false) {
       this.drawMapWin();
     } else if (this.map.mapStarted && !this.player.isDead && !this.isPaused) {
-      this.update();
-      this.camera.update();      
-    }      
+      this.update();      
+    }
+   
+    if (config.DEBUG) { this.drawInfo(); }
 
-    // FPS calculation
-    const now = performance.now();
-    this.deltaTime = now - this._lastFpsUpdate;
-    this._framesThisSecond++;
-    if (now - this._lastFpsUpdate >= 1000) {
-      this.fps = this._framesThisSecond;
-      this._framesThisSecond = 0;
-      this._lastFpsUpdate = now;
+    if (!this.isPaused) {
+      this.gameTime += this.deltaTime;
     }
     
     requestAnimationFrame(this.animate);

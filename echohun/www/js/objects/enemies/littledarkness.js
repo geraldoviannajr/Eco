@@ -5,10 +5,12 @@ class LittleDarkness extends Enemy {
     speed = 0.9;
     _attackRadiusOffset = 2;
     _attackForce = 3;
-    _hasEcho = false;     
+    _hasEcho = false;  
+    _soundEcho = null;   
     constructor(parent, x, y, name, radius = 1, speed = 0.9) {        
         super(x, y, name, false, radius, speed);
         this.parent = parent; // Define o inimigo pai
+        this.createCircleHitbox(0, 0, this.radius + 8);
     }  
     draw() {
         super.draw();
@@ -16,7 +18,7 @@ class LittleDarkness extends Enemy {
         const ctx = game.ctx;
         const numLines = 18;
         const baseLength = this.radius * 2.5;
-        const time = performance.now() * 0.008 + this.x * 0.1 + this.y * 0.1;
+        const time = window.game.gameTime * 0.008 + this.x * 0.1 + this.y * 0.1;
 
         ctx.save();
         ctx.translate(this.x - game.camera.x, this.y - game.camera.y);

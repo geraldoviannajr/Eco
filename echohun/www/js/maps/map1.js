@@ -49,9 +49,12 @@ class Map1 extends Map {
 
     // === INIMIGOS ===
     this.enemies = [
-      new Darkness(this.width * 0.25,this.height / 2, "Terror"),
-      new DeepDarkness(this.width * 0.5,this.height / 2, "TerrorSupremo"),
+      new Darkness(this.width * 0.25,this.height / 2, "Terror", 5, 0.8),
+      new DeepDarkness(this.width * 0.5,this.height / 2, "TerrorSupremo", 100, 0.4),
     ];
+
+    // === POWERUPS ===
+    this.objects.push(new PUPHP(this.width * 0.10, this.height / 2));
 
     game.player.x = 5;
     game.player.y = this.height / 2;

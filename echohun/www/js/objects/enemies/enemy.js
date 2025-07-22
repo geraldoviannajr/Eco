@@ -1,11 +1,6 @@
-class Enemy {
-  x = 0;
-  y = 0;
-  name = "Inimigo"; // Nome do inimigo
-  createdAt = Date.now(); // Data de criação do inimigo
+class Enemy extends MapObject {
   waveCount = 90; // Contagem de ondas para o efeito de radar
   waveAmplitude = 2; // Amplitude da onda para o efeito de radar
-  radius = 5; // Tamanho do inimigo
   _attackRadiusOffset = 0.5; // Offset do raio de ataque
   _distanceToAttack = 200; // Distância mínima para o inimigo atacar
   _attackForce = 10; // Força do ataque ao colidir com o player (escala de 0-100)
@@ -13,6 +8,8 @@ class Enemy {
   _miliSecBetweenEchos = 1000; // Intervalo entre os ecos
   _miliSecBetweenAttacks = 10000; // Tempo mínimo entre os ataques em milissegundos
   _miliSecBetweenSurfering = 500; // Tempo mínimo entre os sofrimentos do inimigo em milissegundos
+  _enemyCanCollide = false; // Indica se o objeto pode colidir com um inimigo
+  _playerCanCollide = true; // Indica se o objeto pode colidir com o jogador
   visible = false; // Indica se o inimigo está visível
   chasing = false; // Indica se o inimigo está perseguindo o jogador
   seeking = false; // Indica se o inimigo está realizando buscas no perímetro
@@ -24,16 +21,16 @@ class Enemy {
   lineCount = 24; // Número de linhas no efeito de eco  
   chasingPoint = {x: 0, y : 0}; // Último ponto de perseguição do inimigo
   seekPoint = {x: 0, y : 0}; // Último ponto de busca no perímetro do inimigo
-  lastEcho = Date.now(); // Último eco emitido pelo inimigo
+  lastEcho = performance.now(); // Último eco emitido pelo inimigo
   forceNextStep = false; // Força o próximo passo do inimigo, usado para testes
   navGrid = []; // Matriz de navegação do inimigo dentro do mapa, será preenchida pelo mapa no momento do carregamento
   chasingPath = []; // Último caminho calculado pelo inimigo  
   _lastAttack = 0; // Último ataque emitido pelo inimigo
   _lastSufering = 0; // Último sofrimento do inimigo, usado para evitar ataques repetidos
-  _soundVisible = ""; // Nome do som do inimigo, usado ao exibir o inimigo
-  _soundEcho = ""; // Nome do som do inimigo, usado para tocar o som de eco
-  _soundAttack = ""; // Nome do som do inimigo, usado para tocar o som de ataque
-  _soundChasing = ""; // Nome do som do inimigo, usado enquanto estiver em perseguição
+  _soundVisible = null; // Usado ao exibir o inimigo
+  _soundEcho = game.sounds.getSound('enemy_echo'); // Usado para tocar o som de eco
+  _soundAttack = null; // Usado para tocar o som de ataque
+  _soundChasing = null; // Usado enquanto estiver em perseguição
   _lastTimeChasing = 0; // Último marcador que o inimigo realizou movimento de perseguição
   _timeStartSeeking = 0; // Momento no qual o o inimigo iniciou a busca no perímetro
   _lastSeekMove = 0; // Último movimento de busca
@@ -43,20 +40,22 @@ class Enemy {
   // Construtor da classe Enemy
   // Recebe as coordenadas x e y, tipo, tamanho e velocidade do inimigo
   constructor(x, y, name = 'Enemy', hasEcho = true, radius = 5, speed = 0.4) {
+    super(x, y, name, radius);
+    this._hasEcho = hasEcho;
+    this.speed = speed;
     this.x = x;
     this.y = y;
     this.name = name;
-    this._hasEcho = hasEcho;
     this.radius = radius;
-    this.speed = speed;
+    this.createCircleHitbox(0, 0, this.radius +1);
   }
 
   attack() {
       // Evita danos repetidos em um curto período
-      if (Date.now() - this._lastSufering <= this._miliSecBetweenSurfering) 
+      if (this._lastSufering != 0 &&  window.game.gameTime - this._lastSufering <= this._miliSecBetweenSurfering) 
         return; 
       game.player.suffering(this._attackForce); // Aplica dano ao player
-      this._lastSufering = Date.now(); // Atualiza o tempo do último sofrimento
+      this._lastSufering = performance.now(); // Atualiza o tempo do último sofrimento
   }
 
   emitSecondaryAttack() {
@@ -66,14 +65,18 @@ class Enemy {
   seek(x, y) {
     if (this.visible) {      
       if (!this.seeking)
-        this._timeStartSeeking = Date.now();
+        this._timeStartSeeking = window.game.gameTime;
 
+      // Evita ir para outro ponto se o inimigo estiver causando sofrimento ao player
+      if (this._lastSufering != 0 &&  window.game.gameTime - this._lastSufering <= this._miliSecBetweenSurfering) 
+        return;      
+     
       // Procura uma célula livre ao redor
       const oricell = convertToCellCoordinates(x, y);
       var nextcell = getRandomFreeNeighborCell(oricell, this.navGrid);
       // Se não encontrou célula livre, interrompe a perseguição
       if (nextcell.x == oricell.x && nextcell.y == oricell.y) {
-        console.log(`Sem células livres ao redor: ${this.name}`);
+        //console.log(`Sem células livres ao redor: ${this.name}`);
         this.seeking = false;
       } 
       // inicia movimento suave até próxima célula
@@ -81,16 +84,22 @@ class Enemy {
       {        
         nextcell = convertToWorldCoordinates(nextcell);        
         this.seekPoint = { x: nextcell.x, y: nextcell.y };
-        console.log(`Indo até próx. célula livre: ${this.name} = ${this.seekPoint.x} , ${this.seekPoint.y}`);
+        //console.log(`Indo até próx. célula livre: ${this.name} = ${this.seekPoint.x} , ${this.seekPoint.y}`);
         this.seeking = true;
         this.chasing = false;
         this.visible = false;
         this.chasingPoint.x = 0;
         this.chasingPoint.y = 0;
         this.chasingPath = [];        
-        this._lastSeekMove = Date.now();
-        if (this._hasEcho)
-          this.emitEcho();
+        this._lastSeekMove = window.game.gameTime;
+        if (this._hasEcho) {
+          // Verifica se precisa emitir eco
+          if ( (this._hasEcho && (window.game.gameTime - this.lastEcho) >= (this._miliSecBetweenEchos * 0.5)) || this.forceNextStep ) {
+            this.lastEcho = window.game.gameTime;
+            this.forceNextStep = false;          
+            this.emitEcho();
+          }
+        }
       }
     }
   }
@@ -104,7 +113,7 @@ class Enemy {
         if (!isWallColliding(nextX, this.y, this.radius))  { this.x = nextX; return true;} 
         else if (!isWallColliding(this.x, nextY, this.radius))  { this.y = nextY; return true;} 
         else {          
-          console.log(`Não foi possível mover ${this.name}`);
+          //console.log(`Não foi possível mover ${this.name}`);
           return false;
           // Se não puder se mover em nenhum eixo
           // Recalcula rota e no próximo update vai tentar essa rota;
@@ -117,34 +126,27 @@ class Enemy {
     if (!this._hasEcho) 
       return;
 
-    if (this._soundEcho != "") 
-      game.sounds.play(this._soundEcho);
+    // Efeito sonoro direcional e de volume
+    if (this._soundEcho) {
+      const dx = this.x - game.player.x;
+      const dy = this.y - game.player.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = config.MAX_DISTANCE_SOUND; // tente sem dividir por 4
+      let volume = 1 - Math.min(dist / maxDist, 1);
+      volume = Math.max(0, Math.min(1, volume));
+      let pan = dx / (game.canvas.width / 2);
+      pan = Math.max(-1, Math.min(1, pan));
+            
+      let id = this._soundEcho.play();
+      this._soundEcho.pos(pan, 0, 0, id);
+      this._soundEcho.volume(volume, id);
+    }
 
     for (let i = 0; i < this.lineCount; i++) {
       const angle = ((Math.PI * 2) / this.lineCount) * i;      
       var x = this.x;
       var y = this.y; 
 
-      /*
-      if (this.radius > 1) {
-        x = this.x + Math.cos(angle) * (this.radius);
-        y = this.y + Math.sin(angle) * (this.radius);         
-
-        if (isWallColliding(x, y, this.radius)) {
-          // Se colidir com parede, ajusta a posição para evitar que o eco nasça dentro da parede
-          const wallOffset = 2; // Distância mínima do eco para a parede
-          const offsetX = Math.cos(angle) * wallOffset;
-          const offsetY = Math.sin(angle) * wallOffset;
-          x += offsetX;
-          y += offsetY;
-          // Verifica novamente se colide com parede após o ajuste
-          if (isWallColliding(x, y, this.radius)) {
-            continue; // Pula este eco se ainda colidir com parede
-          }        
-        } 
-      }
-      */
-           
       game.lines.push( new EchoLine(x, y, angle, "enemy", this, 3) );
     }
   }
@@ -162,25 +164,41 @@ class Enemy {
 
   checkSounds() {
     // Se estiver caçando verifica se está tocando som, se não tiver toca
-    if (this.chasing && this._soundChasing != "") 
-    { 
-      if (this._soundChasingId == undefined || this._soundChasingId == null) {
-        this._soundChasingId = game.sounds.play(this._soundChasing);
-      } else {
-         if (!game.sounds.isPlaying(this._soundChasing, this._soundChasingId))
-          this._soundChasingId = game.sounds.play(this._soundChasing, this._soundChasingId);
-      }
+    if (this.chasing && this._soundChasing != null) { 
+        const dx = this.x - game.player.x;
+        const dy = this.y - game.player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = config.MAX_DISTANCE_SOUND; // ajuste conforme o tamanho do seu mapa/câmera
+        let volume = 1 - Math.min(dist / maxDist, 1);
+        volume = Math.max(0, Math.min(1, volume));
+        let pan = dx / (game.canvas.width / 2);
+        pan = Math.max(-1, Math.min(1, pan));
+
+        if (this._soundChasingId == undefined || this._soundChasingId == null) {
+            this._soundChasingId = this._soundChasing.play();
+            // --- Efeito espacial ---
+            this._soundChasing.pos(pan, 0, 0, this._soundChasingId);
+            this._soundChasing.volume(volume, this._soundChasingId);
+        } else {
+            if (!this._soundChasing.playing(this._soundChasingId))
+                this._soundChasingId = this._soundChasing.play(this._soundChasingId);
+            // Atualiza o panning e volume mesmo se já estiver tocando
+            this._soundChasing.pos(pan, 0, 0, this._soundChasingId);
+            this._soundChasing.volume(volume, this._soundChasingId);
+        }
     }
     // Se não estiver caçando interrompe o som, caso esteja tocando
-    else if (!this.chasing && this._soundChasingId != null) 
-    {
-      game.sounds.stop(this._soundChasing, this._soundChasingId);
-      this._soundChasingId = null; // Reseta o ID do som de perseguição
+    else if (!this.chasing && this._soundChasingId != null) {      
+        if (!this._soundChasing.playing(this._soundChasingId))
+            this._soundChasing.stop(this._soundChasingId);
+        this._soundChasingId = null; // Reseta o ID do som de perseguição
     }
-  }
+}
 
   update() {
-    const now = Date.now();
+    super.update();
+    
+    const now = window.game.gameTime;
 
     // Verifica se tem ponto de perseguição ativo
     // OBS.: O littledaskness nunca para a perseguição
@@ -304,7 +322,7 @@ class Enemy {
             this.chasing = false; // Para a perseguição
             this.visible = false; // Torna invisível
             this.chasingPath = []; // Limpa o caminho            
-            console.log(`Encerrando perseguição e preparando busca: ${this.name}`);
+            //console.log(`Encerrando perseguição e preparando busca: ${this.name}`);
             doSeek = true;
           }
         }
@@ -327,8 +345,8 @@ class Enemy {
     {
       this.visible = true;
       // Verifica se o tempo de cooldown de busca já passou, se passou encerra a busca 
-      if (this._timeStartSeeking > 0 && (Date.now() - this._timeStartSeeking) > this._seekCooldown) {
-        console.log(`Encerrando busca: ${this.name}`);
+      if (this._timeStartSeeking > 0 && (window.game.gameTime - this._timeStartSeeking) > this._seekCooldown) {
+        //console.log(`Encerrando busca: ${this.name}`);
         this.seeking = false;
         this.visible = false;
         this.seekPoint = {x: 0, y: 0 };
@@ -351,7 +369,7 @@ class Enemy {
         this.moveTo(nextX, nextY);
         moved = this.x !== prevX || this.y !== prevY;
         // Se não está se movendo prepara próximo ponto de busca;
-        if (!moved && (Date.now() - this._lastSeekMove > 200)) { 
+        if (!moved && (window.game.gameTime - this._lastSeekMove > 200)) { 
           this.seek(this.x, this.y); 
         }
       }
@@ -359,20 +377,20 @@ class Enemy {
 
     // Verifica e atualiza os sons
     this.checkSounds();
-  
-    // Verifica se o player foi alcançado pelo inimigo e se sim, realiza o ataque direto
-    if (isPlayerColliding(this.x, this.y, this.radius + (this.radius * this._attackRadiusOffset))) { 
-      this.attack();
-    } else if (doSeek) {
-      console.log(`Avaliando busca: ${this.name}`);
+
+    if (!this._playerColliding && doSeek) {
+      //console.log(`Avaliando busca: ${this.name}`);
       this.visible = true;
       this.seek(this.x, this.y);
     }  
   }
 
-  draw() {      
-    if (!this.visible && !config.DEBUG) return; // Se o inimigo não estiver visível, não desenha nada
+  draw() {          
+    if (!this.visible && !config.DEBUG) return; // Se o inimigo não estiver visível, não desenha nada    
+
     if (config.DEBUG) {        
+      super.draw();
+
       game.ctx.save();
 
       // Desenha uma representação visual das células do pathfinder ao redor do inimigo
@@ -423,15 +441,14 @@ class Enemy {
         game.ctx.stroke();
       }      
 
-      game.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
-      game.ctx.beginPath();
-      game.ctx.arc(this.x - game.camera.x, this.y - game.camera.y, this.radius, 0, Math.PI * 2);
-      game.ctx.fill();
-
-      game.ctx.stroke();
       game.ctx.restore();
     }
   }
-  
+
+  onCollision(obj) {
+    if (obj instanceof Player) {
+       this.attack(); 
+    }
+  }
   
 }

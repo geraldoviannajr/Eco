@@ -12,7 +12,7 @@ class EchoLine {
     this.startY = y;
     this.angle = angle;
     this.bounces = bounces;
-    this.createdAt = Date.now();
+    this.createdAt = window.game.gameTime;
     this.doorTouched = false;
     this.enemy = _enemy;
     this.enemiesTouched = [];
@@ -40,9 +40,9 @@ class EchoLine {
   update() {
     if (this.bounces < 0) return;
     
-    const age = Date.now() - this.createdAt;
-    var dynamicSpeed = this.expansionSpeed;
+    const age = window.game.gameTime - this.createdAt;
     var dynamicDuration = this.duration;
+    
     
     // Se o inimigo estiver em modo de busca no perímetro, emite um eco mais lento e mais curto
     if (this.type == "enemy" &&       
@@ -50,12 +50,10 @@ class EchoLine {
         this.enemy._hasEcho &&
         this.enemy.seeking) 
     {
-      dynamicDuration = (dynamicDuration * 0.3); // 20% da duração original
-      //dynamicSpeed = this.expansionSpeed * (1 - (Math.min(1, age / dynamicDuration)) * 0.5);
-      //dynamicSpeed = (dynamicSpeed * 0.1); // 10% da velocidade original de expansão
+      dynamicDuration = (dynamicDuration * 0.1); // 10% da duração original
     }
-    else
-      dynamicSpeed = this.expansionSpeed * (1 - (Math.min(1, age / dynamicDuration)) * 0.5);              
+      
+    var dynamicSpeed = this.expansionSpeed * (1 - (Math.min(1, age / dynamicDuration)) * 0.5);              
 
     const dx = Math.cos(this.angle) * dynamicSpeed;
     const dy = Math.sin(this.angle) * dynamicSpeed;
@@ -139,23 +137,13 @@ class EchoLine {
   // Desenha a linha de eco
   // Se for um inimigo, usa a cor do inimigo
   draw() {
-    const age = Date.now() - this.createdAt;
+    const age = window.game.gameTime - this.createdAt;
     var alpha = Math.max(0, 1 - age / this.duration);
     if (alpha <= 0) return;
 
-    // Se o inimigo estiver em modo de busca no perímetro, emite um eco mais lento e mais curso
-    if (this.type == "enemy" &&       
-        this.enemy != null && 
-        this.enemy._hasEcho &&
-        this.enemy.seeking) 
-    {
-      alpha = 0.8;
-    }
-
-
     game.ctx.strokeStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${alpha})`;
 
-    game.ctx.lineWidth = config.ECHO_LINE_WIDTH;
+    game.ctx.lineWidth = (typeof this.lineWidth !== 'undefined') ? this.lineWidth : config.ECHO_LINE_WIDTH;
     game.ctx.beginPath();
     game.ctx.moveTo(
       this.path[0].x - game.camera.x,
@@ -172,6 +160,6 @@ class EchoLine {
 
   // Verifica se a linha de eco está morta
   isDead() {
-    return Date.now() - this.createdAt > this.duration;
+    return window.game.gameTime - this.createdAt > this.duration;
   }
 }

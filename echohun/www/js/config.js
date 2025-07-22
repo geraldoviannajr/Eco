@@ -36,10 +36,13 @@ config = {
   GAME_SCREEN_WIDTH: 1092,
   GAME_SCREEN_HEIGHT: 468,
 
-  MAX_STAMINA: 100, // Máximo de stamina
-  MAX_HP: 100, // Máximo de hp
+  PLAYER_MAX_STAMINA: 100, // Máximo de stamina
+  PLAYER_MAX_HP: 100, // Máximo de hp
   MIN_STAMINA_RUN: 30, // Mínimo de stamina para correr
   MIN_STAMINA_CLAP: 30, // Mínimo de stamina para clap
+
+  //MAX_DISTANCE_SOUND: 1092, // Máxima distância para o som ser ouvido
+  MAX_DISTANCE_SOUND: 1092 * 2, // Máxima distância para o som ser ouvido
 
   CELL_SIZE: 8, // Tamanho da célula para pathfinding
   DEBUG: false, // Ativa/desativa o modo debug
