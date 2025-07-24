@@ -29,6 +29,10 @@ class Language {
             
             // Outros
             none : 'Nenhum',
+            items : 'Itens',
+
+            // Powerups
+            powerup_hp_desc : 'Aumenta a vida do jogador em 50 pontos',
         },
         en_us : {            
             // Config
@@ -59,6 +63,9 @@ class Language {
             
             // Outros
             none : 'None',            
+            items : 'Items',
+            // Powerups
+            powerup_hp_desc : 'Increases player health by 50 points',
         }
     }
 

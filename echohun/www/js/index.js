@@ -43,24 +43,38 @@ function onDeviceReady() {
   document.documentElement.style.overflow = "hidden";
 
   window.plugins.screensize.get( (screensz) => {
-      window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);
-      window.game.language = new Language('pt_br');
-
-      window.game.map = new Map1();
-      window.game.map.load();
-      window.game.addEvents();
-
-      document.addEventListener("pause",() => {window.game.pause();},false);
-      //document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false);
-      
-      window.addEventListener("resize", resizeCanvas);
-      
-      resizeCanvas();
-
-      window.game.animate();
+      document.getElementById('start_screen').style.display = 'block';      
     },
     (error) => {
       console.error("Error getting screen size:", error);
     }
   );
+}
+
+function startGame() {
+  console.log('Iniciando jogo...');  
+  document.getElementById('start_screen').style.display = 'none';      
+
+  console.log('Criando jogo...');
+  window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);  
+
+  console.log('Criando idioma...');
+  window.game.language = new Language('pt_br');
+
+  console.log('Criando mapa...');
+  window.game.map = new Map1();
+
+  console.log('Carregando mapa...');
+  window.game.map.load();
+
+  console.log('Adicionando eventos...');
+  window.game.addEvents();
+  document.addEventListener("pause",() => {window.game.pause();},false);
+  //document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false); 
+  window.addEventListener("resize", resizeCanvas);
+ 
+  resizeCanvas();
+
+  console.log('Iniciando animação...');
+  window.game.animate();
 }

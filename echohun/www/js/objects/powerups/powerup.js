@@ -1,31 +1,47 @@
 class PowerUp extends MapObject {
+    player = null;
+    bag = null;
     visible = true;
+    caption = 'Powerup';
+    text = 'Powerup';
+    description = 'Generic Powerup';
     _playerCanCollide = true;
     _enemyCanCollide = false;
     _sound = game.sounds.getSound('beep');
 
     playSound() {
-        // Efeito sonoro direcional e de volume
-        if (this._sound) {
-            const dx = this.x - game.player.x;
-            const dy = this.y - game.player.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const maxDist = config.MAX_DISTANCE_SOUND / 2;
-            let volume = 0.8 - Math.min(dist / maxDist, 0.8);
-            volume = Math.max(0, Math.min(1, volume));
-            let pan = dx / (game.canvas.width / 2);
-            pan = Math.max(-1, Math.min(1, pan));
-                
-            let id = this._sound.play("echo");
-            this._sound.pos(pan, 0, 0, id);
-            this._sound.volume(volume, id);
-        }        
+        game.sounds.playSpatial(this._sound, this, game.player);
     }
+
+    onCollision(obj) {
+        super.onCollision(obj);
+
+        if (this.visible == false) { return; }
+        
+        if (obj instanceof Player) {
+            if (obj.bag.items.length + 1 <= obj.bag.maxItems) {
+                console.log('Player get an item: ' + this.name);
+                obj.bag.addItem(this);
+                this.visible = false;
+                if (this._sound) { this._sound.stop(); }
+                game.sounds.play('pickup');
+                this.player = obj;
+                this.bag = obj.bag;
+                game.map.objects.splice(game.map.objects.indexOf(this), 1);
+            }
+        }
+    }
+
+    useIt() {
+        if (this.bag != null && this.bag.items.length > 0) {
+            this.bag.splice(this.bag.indexOf(this), 1);
+        }
+    }
+
     constructor(x, y) {
         super(x, y);
         this.name = 'Powerup';
-        this.radius = 3;
- 
+        this.radius = 3; 
         this.createCircleHitbox(this.x, this.y, this.radius +1);
     }
 }

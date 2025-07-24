@@ -44,7 +44,8 @@ class Game {
 
     this.player = new Player(0, 0); // Cria o jogador na posição inicial (0, 0);
     this.sounds = new Sounds();
-    this.controls.push(new HUD());
+    this.hud = new HUD();
+    this.controls.push(this.hud);
     this.controls.push(new Radar());
   }
   pause = () => {

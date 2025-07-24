@@ -1,4 +1,9 @@
 class PUPHP extends PowerUp {
+    caption = 'HP';
+    text = 'HP';
+    description = game.language.getResource('powerup_hp_desc');
+    increase = 50;
+
     constructor(x, y) {
         super(x, y);
         this.name = 'PUPHP';
@@ -86,20 +91,12 @@ class PUPHP extends PowerUp {
         ctx.shadowBlur = 24 * alpha;
         ctx.fill();
         ctx.restore();
-    }
+    }    
 
-    onCollision(obj) {
-        if (this.visible == false) { return; }
-        
-        if (obj instanceof Player) {
-            if (obj.hp < config.PLAYER_MAX_HP) {
-                obj.hp += 10;
-                this.visible = false;
-                if (this._sound) {
-                    this._sound.stop();
-                }
-                game.map.objects.splice(game.map.objects.indexOf(this), 1);
-            }
+    useIt() {
+        super.useIt();
+        if (this.player != null) {
+            this.player.hp += this.increase;
         }
     }
 }

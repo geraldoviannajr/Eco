@@ -59,7 +59,9 @@ class Enemy extends MapObject {
   }
 
   emitSecondaryAttack() {
-    if (this._soundAttack != "") { game.sounds.play(this._soundAttack); }
+    if (this._soundAttack != "") { 
+      game.sounds.playSpatial(this._soundAttack, this, game.player); 
+    }
   }
 
   seek(x, y) {
@@ -126,20 +128,8 @@ class Enemy extends MapObject {
     if (!this._hasEcho) 
       return;
 
-    // Efeito sonoro direcional e de volume
     if (this._soundEcho) {
-      const dx = this.x - game.player.x;
-      const dy = this.y - game.player.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const maxDist = config.MAX_DISTANCE_SOUND; // tente sem dividir por 4
-      let volume = 1 - Math.min(dist / maxDist, 1);
-      volume = Math.max(0, Math.min(1, volume));
-      let pan = dx / (game.canvas.width / 2);
-      pan = Math.max(-1, Math.min(1, pan));
-            
-      let id = this._soundEcho.play();
-      this._soundEcho.pos(pan, 0, 0, id);
-      this._soundEcho.volume(volume, id);
+      game.sounds.playSpatial(this._soundEcho, this, game.player);
     }
 
     for (let i = 0; i < this.lineCount; i++) {
@@ -175,12 +165,9 @@ class Enemy extends MapObject {
         pan = Math.max(-1, Math.min(1, pan));
 
         if (this._soundChasingId == undefined || this._soundChasingId == null) {
-            this._soundChasingId = this._soundChasing.play();
-            // --- Efeito espacial ---
-            this._soundChasing.pos(pan, 0, 0, this._soundChasingId);
-            this._soundChasing.volume(volume, this._soundChasingId);
+            this._soundChasingId = game.sounds.playSpatial(this._soundChasing, this, game.player);
         } else {
-            if (!this._soundChasing.playing(this._soundChasingId))
+            if (!this._soundChasing.playing(this._soundChasingId)) 
                 this._soundChasingId = this._soundChasing.play(this._soundChasingId);
             // Atualiza o panning e volume mesmo se já estiver tocando
             this._soundChasing.pos(pan, 0, 0, this._soundChasingId);

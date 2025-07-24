@@ -8,10 +8,10 @@ class HUD extends Control {
         super();
     }
                 
-    drawBag(ctx, percent, bagRadius) {
+    drawBag(ctx, centerX, centerY, percent, bagRadius) {
         // --- Indicador circular de mochila na borda do radar ---
-        const bagX = this.x;
-        const bagY = this.y;
+        const bagX = centerX;
+        const bagY = centerY;
                 
         // Nível da mochila (0-100)
         const bagPercent = Math.max(0, Math.min(100, percent));
@@ -24,7 +24,7 @@ class HUD extends Control {
         ctx.beginPath();
         ctx.arc(bagX, bagY, bagRadius - 1, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgb(77, 77, 77)';
-        ctx.lineWidth = 5;
+        ctx.lineWidth = (bagRadius * 0.2);
         ctx.stroke();
        
         // Cor do arco ocupado
@@ -35,7 +35,7 @@ class HUD extends Control {
             ctx.beginPath();
             ctx.arc(bagX, bagY, bagRadius - 1, startAngle, endAngle);
             ctx.strokeStyle = color;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = (bagRadius * 0.2) -1;
             ctx.stroke();
         }
         
@@ -46,14 +46,14 @@ class HUD extends Control {
             ctx.beginPath();
             ctx.arc(bagX, bagY, bagRadius - 1, startAngle, endAngle);
             ctx.strokeStyle = `rgba(0,0,0,${blinkAlpha})`;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = (bagRadius * 0.2) -1;
             ctx.stroke();
         }                
     }
 
-    drawMarker(ctx, centerX, centerY, angle, radius, length = 4) {
-        const outer = radius + length;
-        const inner = radius - length;
+    drawMarker(ctx, centerX, centerY, angle, radius, width = 6) {
+        const outer = radius + (width / 2);
+        const inner = radius - (width / 2);
         const x1 = centerX + Math.cos(angle) * inner;
         const y1 = centerY + Math.sin(angle) * inner;
         const x2 = centerX + Math.cos(angle) * outer;
@@ -67,18 +67,17 @@ class HUD extends Control {
         ctx.stroke();
     }
 
-
-
-    draw = () => {
+    draw = (_x = null, _y = null, _radius = null) => {
         super.draw();
         const ctx = window.game.ctx;
         const hpPercent = window.game.player.hp;
         const staminaPercent = window.game.player.stamina;         
         
-        const centerX = this.x;
-        const centerY = this.y;
-        const radius = this.radius;
-        const lineWidth = 5;
+        const centerX = _x != null ? _x : this.x;
+        const centerY = _y != null ? _y : this.y;
+        const radius = _radius != null ? _radius : this.radius;
+        
+        const lineWidth = radius * 0.2; // 20% do raio do HUD
         ctx.save();
 
         // === Fundo (opcional)
@@ -126,35 +125,34 @@ class HUD extends Control {
 
         // === Marcadores pretos ===
         // 6h (divisor HP/Stamina)
-        this.drawMarker(ctx, centerX, centerY, Math.PI / 2, radius);
+        this.drawMarker(ctx, centerX, centerY, Math.PI / 2, radius, lineWidth);
 
         // 12h (topo do arco)
-        this.drawMarker(ctx, centerX, centerY, -Math.PI / 2, radius);
+        this.drawMarker(ctx, centerX, centerY, -Math.PI / 2, radius, lineWidth);
 
         // Marcador de 30% da stamina (posição relativa)
-        this.drawMarker(ctx, centerX, centerY, stStart + thirtyPercentAngle, radius);        
+        this.drawMarker(ctx, centerX, centerY, stStart + thirtyPercentAngle, radius, lineWidth);        
 
         // === Mochila ===
         const bag = window.game.player.bag;
         const bagPercent = (bag.items.length * 100 / bag.maxItems);
-        const bagRadius = this.radius - 5;
-        this.drawBag(ctx, bagPercent, bagRadius);
+        const bagRadius = radius - lineWidth;
+        this.drawBag(ctx, centerX, centerY, bagPercent, bagRadius);
 
         for (let i = 0; i < bag.maxItems; i++) {
             // Calcula o ângulo para cada marca (distribuído uniformemente)
             const angle = -Math.PI / 2 + (2 * Math.PI * i / bag.maxItems);
-            this.drawMarker(ctx, centerX, centerY, angle, bagRadius-2, 3);
+            this.drawMarker(ctx, centerX, centerY, angle, bagRadius -1, lineWidth - 1);
         }
 
                
         // === Texto de nível
         ctx.fillStyle = '#AEEEEE';
-        ctx.font = 'bold 10px sans-serif';
+        ctx.font = 'bold '+ Math.trunc(lineWidth * 2) +'px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Lv', centerX, centerY - 6);
-        ctx.fillText(window.game.map.level, centerX, centerY + 6);        
-
+        ctx.fillText('Lv', centerX, centerY - (lineWidth + 1));
+        ctx.fillText(window.game.map.level, centerX, centerY + (lineWidth + 1));        
 
 
         ctx.restore();

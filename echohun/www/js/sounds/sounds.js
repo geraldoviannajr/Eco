@@ -48,14 +48,32 @@ class Sounds {
           src: ['/assets/sounds/beep.mp3'],
           html5 : false,
           volume: 0,
-          sprite: {
-            echo: [780, 1100],
-          },          
         }),
       };
     }
 
-    // Play a sound by name
+    // Play a sound with spatial efect
+    playSpatial(sound, pos, refPos, maxDist = config.MAX_DISTANCE_SOUND) {
+      if (sound == null)
+        return;
+
+      const dx = pos.x - refPos.x;
+      const dy = pos.y - refPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      let volume = 1 - Math.min(dist / maxDist, 1);
+      volume = Math.max(0, Math.min(1, volume));
+      let pan = dx / (game.canvas.width / 2);
+      pan = Math.max(-1, Math.min(1, pan));
+
+      let id = sound.play();
+      sound.once('play', function(playId) {
+        this.pos(pan, 0, 0, playId);
+        this.volume(volume, playId);
+      }, id);            
+      return id;
+    }
+
+    // Play a sound by name, with optional sprite and id
     play(name_and_srite, id = 0, forcenew = true) {      
         if (name_and_srite == null)
           return null;
@@ -154,7 +172,7 @@ class Sounds {
       });
     }
 
-    getSound(name) {
+    getSound(name){
       return this.sounds[name];
     }
 }
