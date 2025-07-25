@@ -37,19 +37,25 @@ function resizeCanvas() {
   game.canvas.style.top = 'calc(100% / 2 - '+ (height /2) +'px)';  
 }
 
+function closeStartScreen() {
+  const tela = document.getElementById('tela-inicial');
+  tela.classList.add('fade-out');
+  setTimeout(() => { tela.style.display = 'none'; startGame(); }, 700); // Tempo igual ao do transition do CSS
+}
+
 function onDeviceReady() {
 
   if (device.platform == "browser") // Eventos do Mouse (desktop)
-    document.getElementById('btnStart').addEventListener('click', startGame);
+    document.getElementById('btn-iniciar').addEventListener('click', closeStartScreen );
   else
-    document.getElementById('btnStart').addEventListener('touchstart', startGame);
+    document.getElementById('btn-iniciar').addEventListener('touchstart', closeStartScreen);
 
   screen.orientation.lock("landscape"); // Trava a orientação da tela em modo paisagem
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";
-
+  
   window.plugins.screensize.get( (screensz) => {
-      document.getElementById('start_screen').style.display = 'block';      
+      document.getElementById('tela-inicial').style.display = 'flex';      
     },
     (error) => {
       console.error("Error getting screen size:", error);
@@ -59,13 +65,12 @@ function onDeviceReady() {
 
 function startGame() {  
   console.log('Iniciando jogo...');  
-  document.getElementById('start_screen').style.display = 'none';      
+  document.getElementById('tela-inicial').style.display = 'none';      
   document.getElementById('gameCanvas').style.display = 'block';
 
   console.log('Criando jogo...');
   window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);   
   
-
   console.log('Criando idioma...');
   window.game.language = new Language('pt_br');
 
