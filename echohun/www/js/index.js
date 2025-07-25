@@ -38,6 +38,12 @@ function resizeCanvas() {
 }
 
 function onDeviceReady() {
+
+  if (device.platform == "browser") // Eventos do Mouse (desktop)
+    document.getElementById('btnStart').addEventListener('click', startGame);
+  else
+    document.getElementById('btnStart').addEventListener('touchstart', startGame);
+
   screen.orientation.lock("landscape"); // Trava a orientação da tela em modo paisagem
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";
@@ -51,12 +57,14 @@ function onDeviceReady() {
   );
 }
 
-function startGame() {
+function startGame() {  
   console.log('Iniciando jogo...');  
   document.getElementById('start_screen').style.display = 'none';      
+  document.getElementById('gameCanvas').style.display = 'block';
 
   console.log('Criando jogo...');
-  window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);  
+  window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);   
+  
 
   console.log('Criando idioma...');
   window.game.language = new Language('pt_br');
@@ -73,8 +81,9 @@ function startGame() {
   //document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false); 
   window.addEventListener("resize", resizeCanvas);
  
+  console.log('Ajustando tamanho da tela...');
   resizeCanvas();
 
-  console.log('Iniciando animação...');
-  window.game.animate();
+  console.log('Iniciando jogo...');
+  window.game.start();  
 }

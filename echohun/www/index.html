@@ -44,7 +44,7 @@
             }
             
             canvas { 
-                display: block; 
+                display: none; 
                 position: absolute;
                 top: 0; 
                 left: 0; 
@@ -89,6 +89,52 @@
                 text-shadow: 0.1em 0.1em 4px rgba(0, 0, 0, 1)
             }            
 
+            
+            .btnStart {
+                font-family: 'Horrorfind-gp0Y', monospace;
+                font-size: 6em;
+                color: rgb(255 255 255 / 80%);
+                text-align: center;
+                text-shadow: 0.1em 0.1em 4px rgba(0, 0, 0, 1);
+                display: flex;
+                padding: 20px 40px;
+                cursor: pointer;
+            }
+
+            .btnStart:hover {
+                background-color: rgba(255, 255, 255, 0.8);
+                color: rgba(0, 0, 0, 1);
+            }
+
+            .btnStart:active {
+                background-color: rgba(255, 255, 255, 0.8);
+                color: rgba(0, 0, 0, 1);
+            }
+
+            .btnStart:focus {
+                background-color: rgba(255, 255, 255, 0.8);
+                color: rgba(0, 0, 0, 1);
+            }
+
+            .btnStart:disabled {    
+                background-color: rgba(255, 255, 255, 0.8);
+                color: rgba(0, 0, 0, 1);
+            }
+
+            .btnStart:disabled:hover {
+                background-color: rgba(255, 255, 255, 0.8); 
+                color: rgba(0, 0, 0, 1);
+            }
+
+            .btnStart:disabled:active {
+                background-color: rgba(255, 255, 255, 0.8);
+                color: rgba(0, 0, 0, 1);    
+            }
+
+            .btnStart:disabled:focus {
+                background-color: rgba(255, 255, 255, 0.8);
+                color: rgba(0, 0, 0, 1);
+            }
         </style>
         <script src="js/sounds/howler.js"></script>
         <script src="js/sounds/howler.spatial.min.js"></script>
@@ -107,12 +153,6 @@
         <meta name="color-scheme" content="light dark">
     </head>
     <body>
-        <canvas id="gameCanvas"></canvas>
-        <!--<div id="gameover_screen" class="overlay overlay red"><div class="text">** VOCÊ MORREU **</div></div>-->
-        <div id="start_screen" class="overlay overlay blue">
-            <div class="text">Pressione para iniciar</div>
-            <input type="button" value="Iniciar" onclick="startGame()">
-        </div>
         <script src="cordova.js"></script>
         <script src="js/config.js"></script>
         <script src="js/language/language.js"></script>
@@ -136,6 +176,12 @@
         <script src="js/maps/map.js"></script>
         <script src="js/maps/map1.js"></script>    
         <script src="js/game.js"></script>        
+
+        <canvas id="gameCanvas" style="display: none;"></canvas>
+        <!--<div id="gameover_screen" class="overlay overlay red"><div class="text">** VOCÊ MORREU **</div></div>-->
+        <div id="start_screen" class="overlay overlay blue">
+            <input id="btnStart" type="button" class="btnStart" value="Iniciar">
+        </div>
         <script src="js/index.js"></script>
     </body>
 </html>

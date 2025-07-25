@@ -42,28 +42,36 @@ class Game {
     this.ctx.scale(1, 1);
     //this.ctx.imageSmoothingEnabled = false; // Desativa o suavizado de imagem para evitar borrões
 
+    console.log('|-> Criando jogador...');
     this.player = new Player(0, 0); // Cria o jogador na posição inicial (0, 0);
+
+    console.log('|-> Criando sons...');
     this.sounds = new Sounds();
+
+    console.log('|-> Criando HUD...');
     this.hud = new HUD();
+
+    console.log('|-> Adicionando controles...');
     this.controls.push(this.hud);
+
+    console.log('|-> Criando radar...');
     this.controls.push(new Radar());
   }
-  pause = () => {
+  pause() {
     this.isPaused = true;
     this.sounds.pauseAll();
   }
-  resume = () => {
+  resume() {
     this.isPaused = false;
     this.sounds.resumeAll();
   }
-  emitClap = () => {
+  emitClap() {
     if (this.player.stamina >= config.MIN_STAMINA_CLAP && !this.player.isDead && !this.isPaused) {
       this.player.emitEcho("clap");
       this.player.stamina = 0; // Custa todas as staminas
     }
   }
-
-  checkControls = (x, y, doClick = false) => {
+  checkControls (x, y, doClick = false) {
     var mouseX = x;
     var mouseY = y;
     if (device.platform != "browser") // Eventos do Touchscreen (mobile)
@@ -83,7 +91,7 @@ class Game {
     }
     return false;
   }
-  addEvents = () => {
+  addEvents() {
     // === EVENTOS ===
     window.addEventListener("keydown", (e) => {
       if (!(e.key in this.keys)) {
@@ -229,6 +237,25 @@ class Game {
 
       });
 
+      this.canvas.addEventListener("touchcancel", (e) => {
+        e.preventDefault();
+
+        if (this.idTouchPlayerMove >= 0) {
+          // Verifica se o toque que está sendo cancelado é o que move o jogador
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            if (touch.identifier === this.idTouchPlayerMove) {
+              this.isMousePressed = false;
+              this.mouseTarget = null;
+              this.player.wasIdle = true;
+              this.player.forceNextStep = true;
+              this.idTouchPlayerMove = -1; // Reseta o ID do toque
+              break;
+            }
+          }          
+        }
+      });
+
       this.canvas.addEventListener("touchmove", (e) => {
         e.preventDefault();
         //if (this.isPaused) { this.resume(); return; }
@@ -252,11 +279,11 @@ class Game {
       });
     }
   };
-  drawBackground = () => {
+  drawBackground() {
     this.ctx.fillStyle = "rgb(0, 0, 0)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   };
-  drawGameOver = () => {
+  drawGameOver() {
     this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -275,7 +302,7 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
-  drawPause = () => {
+  drawPause() {
     /*this.ctx.fillStyle = "rgba(0, 13, 201, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -294,7 +321,7 @@ class Game {
 
     this.player.bag.drawInventory(this.ctx);
   };
-  drawMapWin = () => {
+  drawMapWin() {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -313,12 +340,12 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
-  drawControls = () => {
+  drawControls() {
     for (const control of this.controls) {
       control.draw();
     }
   }
-  drawInfo = () => {        
+  drawInfo() {        
     const msg = 
         "FPS: " + this.fps +
         " | Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
@@ -340,7 +367,7 @@ class Game {
     this.ctx.fillText(msg, 10, this.canvas.height - 20);
     this.ctx.restore();
   };
-  updateLines = () => {
+  updateLines() {
     for (let i = this.lines.length - 1; i >= 0; i--) {
       const line = this.lines[i];
       line.update();
@@ -370,7 +397,7 @@ class Game {
     }
     this.map.exitDoor.visible = this.map.exitDoor.touchingLines > 0;
   };
-  checkCollisions = () => {
+  checkCollisions() {
     for (let i = 0; i < this.map.objects.length; i++) {
       for (let j = i + 1; j < this.map.objects.length; j++) {
         const obj1 = this.map.objects[i];
@@ -384,7 +411,7 @@ class Game {
     }    
   };
   
-  update = () => {
+  update() {
     if (this._flashTime > 0) {
       this._flashTime -= this._deltaTime;
       this.ctx.save();
@@ -399,6 +426,13 @@ class Game {
     this.camera.update();
     this.checkCollisions();
   };
+
+  start() {
+    this.sounds.play('scream.dead');
+    this.animate();
+  }
+   
+  // Precisa ser uma função arrow para ser passada como callback do requestAnimationFrame
   animate = () => {
     const now = performance.now();
     this.deltaTime = now - this._lastFrameTime; // em milissegundos
