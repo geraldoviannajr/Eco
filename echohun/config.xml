@@ -8,4 +8,12 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    
+    <!-- Configurações iOS -->
+    <platform name="ios">
+        <preference name="deployment-target" value="12.0" />
+        <preference name="code-sign-identity" value="geraldoviannajr@icloud.com" />
+        <preference name="provisioning-profile" value="" />
+        <preference name="development-team" value="" />
+    </platform>
 </widget>
