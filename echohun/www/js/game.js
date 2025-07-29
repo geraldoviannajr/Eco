@@ -428,7 +428,7 @@ class Game {
   };
 
   start() {
-    this.sounds.play('scream.dead');
+    this.sounds.play('intro');
     this.animate();
   }
    

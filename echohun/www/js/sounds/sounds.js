@@ -6,33 +6,38 @@ class Sounds {
     // Load sounds using Howler.js
     loadSounds() {
       this.sounds = {
+        intro: new Howl({
+          src: ['assets/sounds/bigdark.mp3'],
+          html5 : false,
+          volume: 1
+        }),
         step: new Howl({
-          src: ['/assets/sounds/step1.mp3'],
+          src: ['assets/sounds/step1.mp3'],
           html5 : false,
           volume: 0.3
         }),
         run: new Howl({
-          src: ['/assets/sounds/step1.mp3'],
+          src: ['assets/sounds/step1.mp3'],
           html5 : false,
           volume: 0.3
         }),
         enemy_echo: new Howl({
-          src: ['/assets/sounds/step1.mp3'],
+          src: ['assets/sounds/step1.mp3'],
           html5 : false,
           volume: 0
         }),
         clap: new Howl({
-          src: ['/assets/sounds/clap1.mp3'],
+          src: ['assets/sounds/clap1.mp3'],
           html5 : false,
           volume: 0.5
         }),
         ddChasing: new Howl({
-          src: ['/assets/sounds/bigdark.mp3'],
+          src: ['assets/sounds/bigdark.mp3'],
           html5 : false,
           volume: 0
         }),
         scream: new Howl({
-          src: ['/assets/sounds/scream.mp3'],
+          src: ['assets/sounds/scream.mp3'],
           html5 : false,
           sprite: {
             dead: [521, 3408],
@@ -45,7 +50,7 @@ class Sounds {
           volume: 0.1
         }),
         beep: new Howl({
-          src: ['/assets/sounds/beep.mp3'],
+          src: ['assets/sounds/beep.mp3'],
           html5 : false,
           volume: 0,
         }),
