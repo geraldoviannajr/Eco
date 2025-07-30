@@ -53,7 +53,8 @@ function onDeviceReady() {
   screen.orientation.lock("landscape"); // Trava a orientação da tela em modo paisagem
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";
-  
+   
+  /*
   // Inicializa o gerenciador de fones de ouvido
   window.headphoneManager = new HeadphoneManager();
   
@@ -75,6 +76,7 @@ function onDeviceReady() {
       window.game.sounds.setHeadphoneMode(false);
     }
   });
+  */
   
   window.plugins.screensize.get( (screensz) => {
       document.getElementById('tela-inicial').style.display = 'flex';      
@@ -82,9 +84,7 @@ function onDeviceReady() {
     (error) => {
       console.error("Error getting screen size:", error);
     }
-  );
-
-  
+  );  
 }
 
 function startGame() {  
@@ -114,5 +114,5 @@ function startGame() {
   resizeCanvas();
 
   console.log('Iniciando jogo...');
-  window.game.start();  
+  window.game.start();     
 }

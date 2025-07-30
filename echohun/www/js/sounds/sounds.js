@@ -1,7 +1,7 @@
 class Sounds {
     constructor() {
         this.loadSounds();
-        this.isHeadphone = window.headphoneManager.isConnected();
+        this.isHeadphone = false;
         this.is3D = this.isHeadphone || device.platform == "browser";
     }
 
@@ -185,13 +185,15 @@ class Sounds {
       return this.sounds[name];
     }
 
-    setHeadphoneMode(isHeadphone) {
+    setHeadphoneMode(isHeadphone) {        
       this.isHeadphone = isHeadphone;
-
       if (isHeadphone) {
+        console.log('🎧 Fone conectado - Ajustando áudio...');
         this.is3D = true;
       } else {
-        this.is3D = false;
+        console.log('🔇 Fone desconectado - Ajustando áudio...');
+        if (device.platform != "browser") 
+          this.is3D = false;
       }
     }
 }
