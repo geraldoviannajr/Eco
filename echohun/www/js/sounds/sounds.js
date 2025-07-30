@@ -1,6 +1,8 @@
 class Sounds {
     constructor() {
         this.loadSounds();
+        this.isHeadphone = window.headphoneManager.isConnected();
+        this.is3D = this.isHeadphone || device.platform == "browser";
     }
 
     // Load sounds using Howler.js
@@ -72,7 +74,9 @@ class Sounds {
 
       let id = sound.play();
       sound.once('play', function(playId) {
-        this.pos(pan, 0, 0, playId);
+        if (this.is3D) {
+          this.pos(pan, 0, 0, playId);
+        }
         this.volume(volume, playId);
       }, id);            
       return id;
@@ -179,5 +183,15 @@ class Sounds {
 
     getSound(name){
       return this.sounds[name];
+    }
+
+    setHeadphoneMode(isHeadphone) {
+      this.isHeadphone = isHeadphone;
+
+      if (isHeadphone) {
+        this.is3D = true;
+      } else {
+        this.is3D = false;
+      }
     }
 }

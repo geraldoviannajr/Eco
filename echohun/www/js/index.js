@@ -54,6 +54,28 @@ function onDeviceReady() {
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";
   
+  // Inicializa o gerenciador de fones de ouvido
+  window.headphoneManager = new HeadphoneManager();
+  
+  // Configura callbacks para eventos de fone
+  window.headphoneManager.onConnect(() => {
+    console.log('🎧 Fone conectado - Ajustando áudio...');
+    // Aqui você pode ajustar o volume, equalização, etc.
+    if (window.game && window.game.sounds) {
+      // Ajusta configurações de áudio para fone
+      window.game.sounds.setHeadphoneMode(true);
+    }
+  });
+  
+  window.headphoneManager.onDisconnect(() => {
+    console.log('🔇 Fone desconectado - Ajustando áudio...');
+    // Aqui você pode ajustar o volume, equalização, etc.
+    if (window.game && window.game.sounds) {
+      // Ajusta configurações de áudio para alto-falante
+      window.game.sounds.setHeadphoneMode(false);
+    }
+  });
+  
   window.plugins.screensize.get( (screensz) => {
       document.getElementById('tela-inicial').style.display = 'flex';      
     },
@@ -61,6 +83,8 @@ function onDeviceReady() {
       console.error("Error getting screen size:", error);
     }
   );
+
+  
 }
 
 function startGame() {  

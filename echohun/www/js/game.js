@@ -351,8 +351,10 @@ class Game {
         " | Dim.: (" + this.canvas.width + " x " + this.canvas.height + ")" +    
         " | Player: (" + Math.round(this.player.x) + ", " + Math.round(this.player.y) + ")" +
         " | Camera: (" + Math.round(this.camera.x) + ", " + Math.round(this.camera.y) + ")" +
-        " | Mouse: (" + (this.mousePos ? Math.round(this.mousePos.x) : "N/A") + ", " + (this.mousePos ? Math.round(this.mousePos.y) : "N/A") + ")"
-        " | Target: (" + (this.mouseTarget ? Math.round(this.mouseTarget.x) : "N/A") + ", " + (this.mouseTarget ? Math.round(this.mouseTarget.y) : "N/A") + ")"; 
+        " | Mouse: (" + (this.mousePos ? Math.round(this.mousePos.x) : "N/A") + ", " + (this.mousePos ? Math.round(this.mousePos.y) : "N/A") + ")" +
+        " | Target: (" + (this.mouseTarget ? Math.round(this.mouseTarget.x) : "N/A") + ", " + (this.mouseTarget ? Math.round(this.mouseTarget.y) : "N/A") + ")" +
+        " | Headphone: " + (this.sounds.isHeadphone ? "ON" : "OFF") +
+        " | 3D: " + (this.sounds.is3D ? "ON" : "OFF"); 
     
       /*
       " Enemy[1]: (" + Math.round(this.map.enemies[0].x) + ", " + Math.round(this.map.enemies[0].y) + ", " + this.map.enemies[0].radius + ")" +
@@ -460,7 +462,9 @@ class Game {
       this.update();      
     }
    
-    if (config.DEBUG) { this.drawInfo(); }
+    if (config.DEBUG || config.DEBUG_INFO) { 
+      this.drawInfo(); 
+    }
 
     if (!this.isPaused) {
       this.gameTime += this.deltaTime;
