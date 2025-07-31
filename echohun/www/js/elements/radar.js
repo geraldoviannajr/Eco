@@ -1,9 +1,9 @@
 class Radar extends Control {
-    x = 95;
-    y = 30;
+    x = 100;
+    y = 35;
     active = true;
     visible = true;    
-    radius = 25; // Raio visual do radar (em pixels)    
+    radius = 30; // Raio visual do radar (em pixels)    
     range = 0; // Raio de atuação do radar (em unidades do jogo)
     battery = 100; // 100%    
     batteryDuration = 180; // duração total da bateria em segundos (padrão: 180s)

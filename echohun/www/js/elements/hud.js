@@ -1,9 +1,9 @@
 class HUD extends Control {
     x = 30;
-    y = 30;
+    y = 35;
     active = true;
     visible = true;
-    radius = 25;
+    radius = 30;
     constructor() { 
         super();
     }
