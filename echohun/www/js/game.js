@@ -369,11 +369,6 @@ class Game {
         " | Headphone: " + (this.sounds.isHeadphone ? "ON" : "OFF") +
         " | 3D: " + (this.sounds.is3D ? "ON" : "OFF"); 
     
-      /*
-      " Enemy[1]: (" + Math.round(this.map.enemies[0].x) + ", " + Math.round(this.map.enemies[0].y) + ", " + this.map.enemies[0].radius + ")" +
-      " Enemy[2]: (" + Math.round(this.map.enemies[1].x) + ", " + Math.round(this.map.enemies[1].y) + ", " + this.map.enemies[1].radius + ")" +      
-      */
-
     this.ctx.save();    
     this.ctx.textAlign = "left";
     this.ctx.textBaseline = "top";
@@ -443,7 +438,6 @@ class Game {
   };
 
   start() {
-    this.sounds.play('intro');
     this.animate();
   }
    

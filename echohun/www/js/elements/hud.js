@@ -37,18 +37,7 @@ class HUD extends Control {
             ctx.strokeStyle = color;
             ctx.lineWidth = (bagRadius * 0.2) -1;
             ctx.stroke();
-        }
-        
-        // Indicador de nível baixo (pisca quando <= 25%)
-        if (bagPercent <= 25 && bagPercent > 0) {
-            const time = window.game.gameTime * 0.005;
-            const blinkAlpha = 0.3 + 0.4 * Math.abs(Math.sin(time * 3));
-            ctx.beginPath();
-            ctx.arc(bagX, bagY, bagRadius - 1, startAngle, endAngle);
-            ctx.strokeStyle = `rgba(0,0,0,${blinkAlpha})`;
-            ctx.lineWidth = (bagRadius * 0.2) -1;
-            ctx.stroke();
-        }                
+        }            
     }
 
     drawMarker(ctx, centerX, centerY, angle, radius, width = 6) {

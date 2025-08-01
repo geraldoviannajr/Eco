@@ -43,7 +43,7 @@ class PUPHP extends PowerUp {
             if (isWallColliding(this.x, this.y, this.radius)) continue;
             const line = new EchoLine(this.x, this.y, angle, "powerup", null, 3);
             line.color = orange;
-            line.lineWidth = 1; // mais fina
+            //line.lineWidth = 1; // mais fina
             game.lines.push(line);
         }
         this.playSound();

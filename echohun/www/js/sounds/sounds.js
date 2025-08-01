@@ -11,7 +11,7 @@ class Sounds {
         intro: new Howl({
           src: ['assets/sounds/bigdark.mp3'],
           html5 : false,
-          volume: 1
+          volume: 0.0
         }),
         step: new Howl({
           src: ['assets/sounds/step1.mp3'],
@@ -21,12 +21,12 @@ class Sounds {
         run: new Howl({
           src: ['assets/sounds/step1.mp3'],
           html5 : false,
-          volume: 0.3
+          volume: 0.2
         }),
         enemy_echo: new Howl({
           src: ['assets/sounds/step1.mp3'],
           html5 : false,
-          volume: 0
+          volume: 0.0
         }),
         clap: new Howl({
           src: ['assets/sounds/clap1.mp3'],

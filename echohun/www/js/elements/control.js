@@ -9,5 +9,6 @@ class Control {
     draw() {
     }
     click() {
+        console.log("Clicou em " + Object.prototype.toString.call(this));
     }
 }
