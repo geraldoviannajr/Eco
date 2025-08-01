@@ -458,7 +458,7 @@ class Game {
     this.drawBackground();
     this.map.draw();    
     this.drawControls();
-
+    
     if (this.isPaused) {
       this.drawPause();
     } else if (this.player.isDead == true) {
