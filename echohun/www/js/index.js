@@ -38,9 +38,8 @@ function resizeCanvas() {
 }
 
 function closeStartScreen() {
-  const tela = document.getElementById('tela-inicial');
-  tela.classList.add('fade-out');
-  setTimeout(() => { tela.style.display = 'none'; startGame(); }, 700); // Tempo igual ao do transition do CSS
+  document.getElementById('tela-inicial').classList.add('fade-out');
+  setTimeout(() => { document.getElementById('tela-inicial').style.display = 'none'; startGame(); }, 700); // Tempo igual ao do transition do CSS
 }
 
 function onDeviceReady() {
@@ -54,30 +53,7 @@ function onDeviceReady() {
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";
    
-  /*
-  // Inicializa o gerenciador de fones de ouvido
-  window.headphoneManager = new HeadphoneManager();
-  
-  // Configura callbacks para eventos de fone
-  window.headphoneManager.onConnect(() => {
-    console.log('🎧 Fone conectado - Ajustando áudio...');
-    // Aqui você pode ajustar o volume, equalização, etc.
-    if (window.game && window.game.sounds) {
-      // Ajusta configurações de áudio para fone
-      window.game.sounds.setHeadphoneMode(true);
-    }
-  });
-  
-  window.headphoneManager.onDisconnect(() => {
-    console.log('🔇 Fone desconectado - Ajustando áudio...');
-    // Aqui você pode ajustar o volume, equalização, etc.
-    if (window.game && window.game.sounds) {
-      // Ajusta configurações de áudio para alto-falante
-      window.game.sounds.setHeadphoneMode(false);
-    }
-  });
-  */
-  
+   
   window.plugins.screensize.get( (screensz) => {
       document.getElementById('tela-inicial').style.display = 'flex';      
     },
@@ -87,8 +63,8 @@ function onDeviceReady() {
   );  
 }
 
-function startGame() {  
-  console.log('Iniciando jogo...');  
+function startGame() {      
+  console.log('Iniciando jogo em plataforma: ' + device.platform + '...');  
   document.getElementById('tela-inicial').style.display = 'none';      
   document.getElementById('gameCanvas').style.display = 'block';
 
@@ -107,7 +83,6 @@ function startGame() {
   console.log('Adicionando eventos...');
   window.game.addEvents();
   document.addEventListener("pause",() => {window.game.pause();},false);
-  //document.addEventListener("resume",() => {setTimeout(() => {window.game.resume();}, 1000);},false); 
   window.addEventListener("resize", resizeCanvas);
  
   console.log('Ajustando tamanho da tela...');

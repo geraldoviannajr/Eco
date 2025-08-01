@@ -1,8 +1,16 @@
 class Sounds {
     constructor() {
+        this.isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || device.platform == "iOS";
+       
+        console.log(' | -> 🎵 Carregando arquivos de sons');
         this.loadSounds();
+
         this.isHeadphone = false;
-        this.is3D = this.isHeadphone || device.platform == "browser";
+        this.is3D = this.isHeadphone || device.platform == "browser";               
+        this.audioContextInitialized = false;
+                
+        console.log(' |-> 🎵 Inicializando contexto de áudio');
+        if (this.isIOS) { this.initAudioContext(); }   
     }
 
     // Load sounds using Howler.js
@@ -10,37 +18,37 @@ class Sounds {
       this.sounds = {
         intro: new Howl({
           src: ['assets/sounds/bigdark.mp3'],
-          html5 : false,
+          html5: this.isIOS, // Usar HTML5 no iOS para melhor compatibilidade
           volume: 0.0
         }),
         step: new Howl({
           src: ['assets/sounds/step1.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           volume: 0.3
         }),
         run: new Howl({
           src: ['assets/sounds/step1.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           volume: 0.2
         }),
         enemy_echo: new Howl({
           src: ['assets/sounds/step1.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           volume: 0.0
         }),
         clap: new Howl({
           src: ['assets/sounds/clap1.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           volume: 0.5
         }),
         ddChasing: new Howl({
           src: ['assets/sounds/bigdark.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           volume: 0
         }),
         scream: new Howl({
           src: ['assets/sounds/scream.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           sprite: {
             dead: [521, 3408],
             dead2: [3861, 6870],
@@ -53,7 +61,7 @@ class Sounds {
         }),
         beep: new Howl({
           src: ['assets/sounds/beep.mp3'],
-          html5 : false,
+          html5 : this.isIOS,
           volume: 0,
         }),
       };
@@ -196,4 +204,32 @@ class Sounds {
           this.is3D = false;
       }
     }
+
+    // Inicializar contexto de áudio para iOS
+    initAudioContext() {
+        // Criar um evento de toque para inicializar o contexto
+        const initAudio = () => {
+            if (!this.audioContextInitialized) {
+                // Tocar um som silencioso para "despertar" o contexto
+                const silentSound = new Howl({
+                    src: ['assets/sounds/beep.mp3'],
+                    volume: 0,
+                    html5: this.isIOS // Usar HTML5 no iOS para melhor compatibilidade
+                });
+                silentSound.play();
+                silentSound.once('end', () => {
+                    silentSound.unload();
+                });
+                this.audioContextInitialized = true;
+                console.log('  |-> 🎵 Contexto de áudio inicializado para iOS');
+            }
+            // Remover o listener após a primeira inicialização
+            document.removeEventListener('touchstart', initAudio);
+            document.removeEventListener('click', initAudio);
+        };
+
+        document.addEventListener('touchstart', initAudio);
+        document.addEventListener('click', initAudio);
+    }
+    
 }

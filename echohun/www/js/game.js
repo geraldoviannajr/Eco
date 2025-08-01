@@ -47,19 +47,21 @@ class Game {
 
     console.log('|-> Criando sons...');
     this.sounds = new Sounds();
-
-    window.HeadsetDetection.detect(function(detected) { window.game.sounds.setHeadphoneMode(detected); });
-
-    window.HeadsetDetection.registerRemoteEvents(function(status) {
-      switch (status) {
-          case 'headsetAdded':
-            window.game.sounds.setHeadphoneMode(true);
-            break;
-          case 'headsetRemoved':
-            window.game.sounds.setHeadphoneMode(false);
-            break;
-      };
-    });
+        
+    if (window.HeadsetDetection && device.platform != 'browser') {
+      console.log(' |-> 🎵 Adicionando eventos de áudio');
+      window.HeadsetDetection.detect(function(detected) { window.game.sounds.setHeadphoneMode(detected); });
+      window.HeadsetDetection.registerRemoteEvents(function(status) {
+        switch (status) {
+            case 'headsetAdded':
+              window.game.sounds.setHeadphoneMode(true);
+              break;
+            case 'headsetRemoved':
+              window.game.sounds.setHeadphoneMode(false);
+              break;
+        };
+      });
+    }
   
     console.log('|-> Criando HUD...');
     this.hud = new HUD();

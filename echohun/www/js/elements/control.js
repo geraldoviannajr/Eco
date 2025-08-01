@@ -9,6 +9,6 @@ class Control {
     draw() {
     }
     click() {
-        console.log("Clicou em " + Object.prototype.toString.call(this));
+        console.log("Clicou em " + this.constructor.name);
     }
 }
