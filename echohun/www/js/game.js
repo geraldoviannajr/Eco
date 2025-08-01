@@ -94,11 +94,12 @@ class Game {
       const rect = this.canvas.getBoundingClientRect();        
       const scaleX = this.canvas.width / rect.width;
       const scaleY = this.canvas.height / rect.height;
-      mouseX = ((x - rect.left) * scaleX) + this.camera.x;
-      mouseY = ((y - rect.top) * scaleY) + this.camera.y;  
+      mouseX = ((x - rect.left) * scaleX); //+ this.camera.x;
+      mouseY = ((y - rect.top) * scaleY); //+ this.camera.y;  
     }
 
-    console.log(' |-> 👆 Checando controles: {' + x + ',' + y + '}, {' + mouseX + ',' + mouseY + '}, ' +  doClick);
+    if (config.DEBUG_INFO)
+      console.log(' |-> 👆 Checando controles: {' + x + ',' + y + '}, {' + mouseX + ',' + mouseY + '}, ' +  doClick);
 
     for (const control of this.controls) {
       if (control.visible && pointInCircle(mouseX, mouseY, control)) {
@@ -196,15 +197,22 @@ class Game {
         if (this.player.isDead) return;
 
         const touch = e.touches[e.touches.length - 1]; // Armazena o índice do último toque
-        console.log('👆 Evento "TouchStart" detectado: ', touch);
+
+        if (config.DEBUG_INFO)
+          console.log('👆 Evento "TouchStart" detectado: ', touch);
         
         // Verifica se tocou num controle
         if (this.checkControls(touch.clientX, touch.clientY, false)) 
           return;
+        
+        if (e.touches.length == 2)  { 
+          // Se houver dois toques, dispara o clap
+          this.emitClap(); 
+        } else if (e.touches.length == 1) { 
+          // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
+          if (config.DEBUG_INFO)
+            console.log(' |-> Armazenando ID do toque que move o jogador e iniciando movimento...');
 
-        // Se houver dois toques, dispara o clap
-        if (e.touches.length == 2)  { this.emitClap(); }               
-        else if (e.touches.length == 1) { // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
           this.idTouchPlayerMove = touch.identifier; // Armazena o ID do toque que move o jogador
           const rect = this.canvas.getBoundingClientRect();        
           const scaleX = this.canvas.width / rect.width;
@@ -221,7 +229,9 @@ class Game {
       this.canvas.addEventListener("touchend", (e) => {
         e.preventDefault();        
         if (this.isPaused) { this.resume(); return; }
-        console.log('👆 Evento "TouchEnd" detectado: ', e.changedTouches);
+        
+        if (config.DEBUG_INFO)
+          console.log('👆 Evento "TouchEnd" detectado: ', e.changedTouches);
 
         var isMove = false;
 
@@ -231,6 +241,9 @@ class Game {
           
           // Verifica se o toque que está sendo liberado é o que move o jogador
           if (this.idTouchPlayerMove >= 0 && touch.identifier === this.idTouchPlayerMove) {
+            if (config.DEBUG_INFO)
+              console.log(' |-> Liberando toque do jogador...');
+            
             isMove = true;
             this.isMousePressed = false;
             this.mouseTarget = null;
@@ -247,14 +260,18 @@ class Game {
       });
 
       this.canvas.addEventListener("touchcancel", (e) => {
-        e.preventDefault();
-        console.log('👆 Evento "TouchCancel" detectado: ', e.changedTouches);
+        // e.preventDefault();
+        if (config.DEBUG_INFO)
+          console.log('👆 Evento "TouchCancel" detectado: ', e.changedTouches);
 
         if (this.idTouchPlayerMove >= 0) {
           // Verifica se o toque que está sendo cancelado é o que move o jogador
           for (let i = 0; i < e.changedTouches.length; i++) {
             const touch = e.changedTouches[i];
             if (touch.identifier === this.idTouchPlayerMove) {
+              if (config.DEBUG_INFO)
+                console.log(' |-> Cancelando toque do jogador...');
+
               this.isMousePressed = false;
               this.mouseTarget = null;
               this.player.wasIdle = true;
@@ -275,7 +292,7 @@ class Game {
           // Verifica se o toque que está se movendo é o que move o jogador
           for (let i = 0; i < e.touches.length; i++) {
             const touch = e.touches[i];
-            if (touch.identifier === this.idTouchPlayerMove) {
+            if (touch.identifier === this.idTouchPlayerMove) {              
               const rect = this.canvas.getBoundingClientRect();
               const scaleX = this.canvas.width / rect.width;
               const scaleY = this.canvas.height / rect.height;
