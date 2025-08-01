@@ -15,5 +15,8 @@
         <preference name="code-sign-identity" value="geraldoviannajr@icloud.com" />
         <preference name="provisioning-profile" value="" />
         <preference name="development-team" value="" />
+        <preference name="AllowInlineMediaPlayback" value="true" />
+        <preference name="MediaPlaybackRequiresUserAction" value="false" />
+        <preference name="MediaPlaybackAllowsAirPlay" value="true" />
     </platform>
 </widget>
