@@ -47,4 +47,5 @@ config = {
   CELL_SIZE: 8, // Tamanho da célula para pathfinding
   DEBUG: false, // Ativa/desativa o modo debug
   DEBUG_INFO: true, // Ativa/desativa a exibição de informações de debug no canto inferior esquerdo
+  FORCE_TOUCH: true, // Força eventos somente em touchscreen (Desativa eventos de click)
 };

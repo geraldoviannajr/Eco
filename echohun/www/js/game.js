@@ -47,7 +47,7 @@ class Game {
 
     console.log('|-> Criando sons...');
     this.sounds = new Sounds();
-        
+       
     if (window.HeadsetDetection && device.platform != 'browser') {
       console.log(' |-> 🎵 Adicionando eventos de áudio');
       window.HeadsetDetection.detect(function(detected) { window.game.sounds.setHeadphoneMode(detected); });
@@ -88,19 +88,21 @@ class Game {
   }
   checkControls (x, y, doClick = false) {
     var mouseX = x;
-    var mouseY = y;
-    if (device.platform != "browser") // Eventos do Touchscreen (mobile)
-    {
+    var mouseY = y;    
+    if (device.platform != "browser" || config.FORCE_TOUCH) // Eventos do Touchscreen (mobile)
+    {      
       const rect = this.canvas.getBoundingClientRect();        
       const scaleX = this.canvas.width / rect.width;
       const scaleY = this.canvas.height / rect.height;
       mouseX = ((x - rect.left) * scaleX) + this.camera.x;
       mouseY = ((y - rect.top) * scaleY) + this.camera.y;  
     }
+
+    console.log(' |-> 👆 Checando controles: {' + x + ',' + y + '}, {' + mouseX + ',' + mouseY + '}, ' +  doClick);
+
     for (const control of this.controls) {
       if (control.visible && pointInCircle(mouseX, mouseY, control)) {
-        if (doClick == true) 
-          control.click();
+        if (doClick == true) { control.click(); }
         return true;
       }
     }
@@ -129,18 +131,14 @@ class Game {
         !this.keys["A"] &&
         !this.keys["S"] &&
         !this.keys["D"]
-      ) {
-        this.player.wasIdle = true;
-        this.player.forceNextStep = true;
-      }
+      ) { this.player.wasIdle = true; }
+      else { this.player.forceNextStep = true; }
 
       //Se apertou "space"
-      if (e.code === "Space") {
-        this.emitClap();
-      }
+      if (e.code === "Space") { this.emitClap(); }
     });
 
-    if (device.platform == "browser") // Eventos do Mouse (desktop)
+    if (device.platform == "browser" && !config.FORCE_TOUCH) // Eventos do Mouse (desktop)
     {
       this.canvas.addEventListener("mousedown", (e) => {        
         e.preventDefault();
@@ -192,25 +190,22 @@ class Game {
     } 
     else  // Eventos do Touchscreen (mobile)
     {
-      this.canvas.addEventListener("touchstart", (e) => {
+      this.canvas.addEventListener("touchstart", (e) => {        
         e.preventDefault();
         if (this.isPaused) { return; }
         if (this.player.isDead) return;
 
         const touch = e.touches[e.touches.length - 1]; // Armazena o índice do último toque
+        console.log('👆 Evento "TouchStart" detectado: ', touch);
         
         // Verifica se tocou num controle
         if (this.checkControls(touch.clientX, touch.clientY, false)) 
           return;
 
         // Se houver dois toques, dispara o clap
-        if (e.touches.length == 2)  {
-          this.emitClap();
-        }
-        // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
-        else if (e.touches.length == 1) {          
+        if (e.touches.length == 2)  { this.emitClap(); }               
+        else if (e.touches.length == 1) { // Se houver apenas um toque, armazena o ID do toque para o movimento do player 
           this.idTouchPlayerMove = touch.identifier; // Armazena o ID do toque que move o jogador
-
           const rect = this.canvas.getBoundingClientRect();        
           const scaleX = this.canvas.width / rect.width;
           const scaleY = this.canvas.height / rect.height;
@@ -224,36 +219,36 @@ class Game {
       });
 
       this.canvas.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        
+        e.preventDefault();        
         if (this.isPaused) { this.resume(); return; }
+        console.log('👆 Evento "TouchEnd" detectado: ', e.changedTouches);
 
         var isMove = false;
 
-        if (this.idTouchPlayerMove >= 0) {
+        // Executa todos os eventos de liberação
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          
           // Verifica se o toque que está sendo liberado é o que move o jogador
-          for (let i = 0; i < e.changedTouches.length; i++) {
-            const touch = e.changedTouches[i];
-            if (touch.identifier === this.idTouchPlayerMove) {
-              isMove = true;
-              this.isMousePressed = false;
-              this.mouseTarget = null;
-              this.player.wasIdle = true;
-              this.player.forceNextStep = true;
-              this.idTouchPlayerMove = -1; // Reseta o ID do toque
-              break;
-            }
-          }          
-        }
-
-        if (!isMove) {
-          this.checkControls(touch.clientX, touch.clientY, true);
-        }
+          if (this.idTouchPlayerMove >= 0 && touch.identifier === this.idTouchPlayerMove) {
+            isMove = true;
+            this.isMousePressed = false;
+            this.mouseTarget = null;
+            this.player.wasIdle = true;
+            this.player.forceNextStep = true;
+            this.idTouchPlayerMove = -1; // Reseta o ID do toque
+          }
+          else 
+          {
+            this.checkControls(touch.clientX, touch.clientY, true);
+          }
+        }          
 
       });
 
       this.canvas.addEventListener("touchcancel", (e) => {
         e.preventDefault();
+        console.log('👆 Evento "TouchCancel" detectado: ', e.changedTouches);
 
         if (this.idTouchPlayerMove >= 0) {
           // Verifica se o toque que está sendo cancelado é o que move o jogador

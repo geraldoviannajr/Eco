@@ -2,15 +2,16 @@ class Sounds {
     constructor() {
         this.isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || device.platform == "iOS";
        
-        console.log(' | -> 🎵 Carregando arquivos de sons');
+        console.log(' |-> 🎵 Carregando arquivos de sons');
         this.loadSounds();
 
         this.isHeadphone = false;
         this.is3D = this.isHeadphone || device.platform == "browser";               
         this.audioContextInitialized = false;
-                
+
         console.log(' |-> 🎵 Inicializando contexto de áudio');
-        if (this.isIOS) { this.initAudioContext(); }   
+        this.checkAudioSupport();                     
+        if (this.isIOS) {  this.forceAudioInit(); }   
     }
 
     // Load sounds using Howler.js
@@ -205,31 +206,60 @@ class Sounds {
       }
     }
 
-    // Inicializar contexto de áudio para iOS
-    initAudioContext() {
-        // Criar um evento de toque para inicializar o contexto
-        const initAudio = () => {
-            if (!this.audioContextInitialized) {
-                // Tocar um som silencioso para "despertar" o contexto
-                const silentSound = new Howl({
-                    src: ['assets/sounds/beep.mp3'],
-                    volume: 0,
-                    html5: this.isIOS // Usar HTML5 no iOS para melhor compatibilidade
-                });
-                silentSound.play();
-                silentSound.once('end', () => {
-                    silentSound.unload();
-                });
-                this.audioContextInitialized = true;
-                console.log('  |-> 🎵 Contexto de áudio inicializado para iOS');
-            }
-            // Remover o listener após a primeira inicialização
-            document.removeEventListener('touchstart', initAudio);
-            document.removeEventListener('click', initAudio);
-        };
-
-        document.addEventListener('touchstart', initAudio);
-        document.addEventListener('click', initAudio);
+    // Método para limpar recursos de áudio (importante no iOS)
+    cleanup() {
+      if (this.sounds) {
+        Object.values(this.sounds).forEach(sound => {
+          if (sound && typeof sound.unload === 'function') {
+            sound.unload();
+          }
+        });
+      }
+      // Limpar todos os sons do Howler
+      Howler.unload();
     }
+
+         // Método para verificar se o áudio está funcionando no iOS
+     checkAudioSupport() {
+       if (this.isIOS) { console.log('  |-> 🍎 iOS detectado - Verificando suporte de áudio...'); }
+       else { console.log('  |-> 🎵 Verificando suporte de áudio...'); }
+        
+      // Testar se o Web Audio API está disponível
+      if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+        console.log('   |-> ✅ Web Audio API suportada');
+      } else {
+        console.log('   |-> ⚠️ Web Audio API não suportada - usando HTML5 Audio');
+      }
+
+      // Verificar se o HTML5 Audio está disponível
+      const audio = new Audio();
+      if (audio.canPlayType && audio.canPlayType('audio/mpeg').replace(/no/, '')) {
+        console.log('   |-> ✅ HTML5 Audio suportado');
+      } else {
+        console.log('  |-> ❌ HTML5 Audio não suportado');
+      }
+    }
+
+    // Método para forçar inicialização do áudio no iOS
+    forceAudioInit() {
+      if (this.isIOS && !this.audioContextInitialized) {
+        console.log('  |-> 🔧 Forçando inicialização de áudio no iOS...');
+        
+        // Tocar todos os sons brevemente para inicializar
+        Object.values(this.sounds).forEach(sound => {
+          if (sound && typeof sound.play === 'function') {
+            const originalVolume = sound.volume();
+            sound.volume(0);
+            const id = sound.play();
+            sound.once('play', () => {
+              sound.stop(id);
+              sound.volume(originalVolume);
+            }, id);
+          }
+        });
+        
+        this.audioContextInitialized = true;
+      }
+    }    
     
 }

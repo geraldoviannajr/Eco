@@ -1,5 +1,5 @@
 class HUD extends Control {
-    x = 30;
+    x = 45;
     y = 35;
     active = true;
     visible = true;
@@ -147,7 +147,7 @@ class HUD extends Control {
         ctx.restore();
     }
 
-    click = () => {
+    click() {
         super.click();
         if (window.game.isPaused)
             window.game.resume();

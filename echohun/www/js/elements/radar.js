@@ -1,5 +1,5 @@
 class Radar extends Control {
-    x = 100;
+    x = 115;
     y = 35;
     active = true;
     visible = true;    
@@ -13,7 +13,7 @@ class Radar extends Control {
         super();
     }
 
-    click = () => {
+    click() {
         super.click();
         this.active = !this.active;
     }
