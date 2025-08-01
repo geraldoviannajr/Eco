@@ -44,7 +44,7 @@
             }
             
             canvas { 
-                display: none; 
+                display: block; /* Alterado de 'none' para 'block' para garantir que o canvas seja visível */
                 position: absolute;
                 top: 0; 
                 left: 0; 
@@ -146,16 +146,15 @@
         <script src="js/maps/map1.js"></script>    
         <script src="js/game.js"></script>        
 
-        <canvas id="gameCanvas" style="display: none;"></canvas>
+        <canvas id="gameCanvas"></canvas>
+        <!--<canvas id="gameCanvas" style="display: none;"></canvas>-->
         <!--<div id="gameover_screen" class="overlay overlay red"><div class="text">** VOCÊ MORREU **</div></div>-->
 
-        <div id="tela-inicial" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #111;">
-            <!--<img src="img/logo.png" alt="Logo do Jogo" style="width: 50px; margin-bottom: 10px;">-->
+        <!--<div id="tela-inicial" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #111;">
             <h1 class="horror" style="font-size: 7rem; color: #fff; margin-bottom: 10px;">ECHO HUNTERS</h1>
-            <!--<p style="font-size: 2rem; font-family: 'PressStart2P-Regular', monospace; color: #aaa; margin-bottom: 5px;">Sinta a escuridão, fuja dos ecos</p>-->
             <button id="btn-iniciar" style="padding: 20px 60px; font-size: 1.5em; border: none; border-radius: 8px; background: #ff0055; color: #fff; cursor: pointer; font-family: 'PressStart2P-Regular', monospace; box-shadow: 0 4px 16px #0008;">Iniciar</button>
             <div style="position: absolute; bottom: 16px; color: #444; font-size: 0.9em;">&copy; 2025 geraldoviannajr@gmail.com</div>
-        </div>
+        </div>-->
 
         <script src="js/index.js"></script>
     </body>

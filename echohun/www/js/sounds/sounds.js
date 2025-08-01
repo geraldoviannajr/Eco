@@ -1,7 +1,6 @@
 class Sounds {
     constructor() {
-        this.isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || device.platform == "iOS";
-       
+        this.isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent)) || device.platform == "iOS";               
         console.log(' |-> 🎵 Carregando arquivos de sons');
         this.loadSounds();
 
@@ -15,7 +14,7 @@ class Sounds {
     }
 
     // Load sounds using Howler.js
-    loadSounds() {
+    loadSounds() {            
       this.sounds = {
         intro: new Howl({
           src: ['assets/sounds/bigdark.mp3'],
@@ -47,9 +46,15 @@ class Sounds {
           html5 : this.isIOS,
           volume: 0
         }),
+        beep: new Howl({
+          src: ['assets/sounds/beep.mp3'],
+          html5 : this.isIOS,
+          volume: 0,
+        }),
         scream: new Howl({
           src: ['assets/sounds/scream.mp3'],
           html5 : this.isIOS,
+          preload: true,
           sprite: {
             dead: [521, 3408],
             dead2: [3861, 6870],
@@ -58,20 +63,17 @@ class Sounds {
             hurt3: [10835, 11948],
             hurt4: [12348, 13409]
           },          
-          volume: 0.1
-        }),
-        beep: new Howl({
-          src: ['assets/sounds/beep.mp3'],
-          html5 : this.isIOS,
-          volume: 0,
+          volume: 0
         }),
       };
     }
 
     // Play a sound with spatial efect
-    playSpatial(sound, pos, refPos, maxDist = config.MAX_DISTANCE_SOUND) {
+    playSpatial(sound, pos, refPos, maxDist = config.MAX_DISTANCE_SOUND) {      
       if (sound == null)
         return;
+      if (config.DEBUG_INFO)
+        console.log(' |-> 🎵 playSpatial: ', sound);
 
       const dx = pos.x - refPos.x;
       const dy = pos.y - refPos.y;
@@ -103,10 +105,14 @@ class Sounds {
         if (this.sounds[name]) {            
           if (id > 0) {
             if (!forcenew && this.sounds[name].playing(id)) {
-              //console.warn(`Sound "${name}"-"${sprite}" is already playing.`);
+              if (config.DEBUG_INFO)
+                console.warn(` |-> 🎵 Sound "${name}"-"${sprite}" is already playing.`);
+
               return null;
             } else {
-              //console.warn(`Stop and play againg sound: "${name}"-"${sprite}".`);              
+              if (config.DEBUG_INFO)
+                console.log(` |-> 🎵 Stop and play againg sound: "${name}"-"${sprite}".`);
+
               this.sounds[name].stop(id);
               if (sprite != null) {
                 newid = this.sounds[name].play(sprite, id);
@@ -118,7 +124,8 @@ class Sounds {
             }
           }
 
-          //console.log(`Playing sound: "${name}"-"${sprite}"`);
+          if (config.DEBUG_INFO)
+            console.log(` |-> 🎵 Playing sound: "${name}"-"${sprite}"`);
 
           if (sprite != null) {
             newid = this.sounds[name].play(sprite);

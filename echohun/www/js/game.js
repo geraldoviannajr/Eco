@@ -20,6 +20,7 @@ class Game {
   _framesThisSecond = 0;
   _lastFpsUpdate = performance.now();
   _lastFrameTime = performance.now();
+
   constructor(w, h) {
     this.lines = [];
     this.keys = {};
@@ -72,20 +73,24 @@ class Game {
     console.log('|-> Criando radar...');
     this.controls.push(new Radar());
   }
+
   pause() {
     this.isPaused = true;
     this.sounds.pauseAll();
   }
+
   resume() {
     this.isPaused = false;
     this.sounds.resumeAll();
   }
+
   emitClap() {
     if (this.player.stamina >= config.MIN_STAMINA_CLAP && !this.player.isDead && !this.isPaused) {
       this.player.emitEcho("clap");
       this.player.stamina = 0; // Custa todas as staminas
     }
   }
+
   checkControls (x, y, doClick = false) {
     var mouseX = x;
     var mouseY = y;    
@@ -109,6 +114,7 @@ class Game {
     }
     return false;
   }
+
   addEvents() {
     // === EVENTOS ===
     window.addEventListener("keydown", (e) => {
@@ -306,10 +312,12 @@ class Game {
       });
     }
   };
+
   drawBackground() {
     this.ctx.fillStyle = "rgb(0, 0, 0)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   };
+  
   drawGameOver() {
     this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -329,6 +337,7 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
+
   drawPause() {
     /*this.ctx.fillStyle = "rgba(0, 13, 201, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -348,6 +357,7 @@ class Game {
 
     this.player.bag.drawInventory(this.ctx);
   };
+
   drawMapWin() {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -367,11 +377,13 @@ class Game {
     this.ctx.fillText(message, centerX, centerY);
     this.ctx.restore();
   };
+
   drawControls() {
     for (const control of this.controls) {
       control.draw();
     }
   }
+
   drawInfo() {        
     const msg = 
         "FPS: " + this.fps +
@@ -391,6 +403,7 @@ class Game {
     this.ctx.fillText(msg, 10, this.canvas.height - 20);
     this.ctx.restore();
   };
+
   updateLines() {
     for (let i = this.lines.length - 1; i >= 0; i--) {
       const line = this.lines[i];
@@ -421,6 +434,7 @@ class Game {
     }
     this.map.exitDoor.visible = this.map.exitDoor.touchingLines > 0;
   };
+  
   checkCollisions() {
     for (let i = 0; i < this.map.objects.length; i++) {
       for (let j = i + 1; j < this.map.objects.length; j++) {
