@@ -339,24 +339,37 @@ class Game {
   };
 
   drawPause() {
-    /*this.ctx.fillStyle = "rgba(0, 13, 201, 0.5)";
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.player.bag.drawInventory(this.ctx);
+  };
 
-    const message = "PAUSED";
+  drawInit() {
+    const width = config.GAME_SCREEN_WIDTH;
+    const height = config.GAME_SCREEN_HEIGHT;
+    const gradient = ctx.createRadialGradient(width/2, height/2, 10, width/2, height/2, height);
+
+    gradient.addColorStop(0, '#333');
+    gradient.addColorStop(1, '#111');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+
     this.ctx.save();
     this.ctx.font = "62px Horrorfind-gp0Y";
     this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "middle";
+    this.ctx.textBaseline = "middle";    
 
     const centerX = this.ctx.canvas.width / 2;
     const centerY = this.ctx.canvas.height / 2;
 
-    this.ctx.fillStyle = "white";
-    this.ctx.fillText(message, centerX, centerY);
-    this.ctx.restore();*/
-
-    this.player.bag.drawInventory(this.ctx);
-  };
+    // Sombra para o título
+    ctx.fillStyle = '#000';
+    ctx.fillText('ECHO HUNTERS', centerX + 4, centerY + 4);
+    
+    // Título
+    ctx.fillStyle = '#ff0055';
+    ctx.fillText('ECHO HUNTERS', centerX, centerY);
+    
+    this.ctx.restore();
+  }
 
   drawMapWin() {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";

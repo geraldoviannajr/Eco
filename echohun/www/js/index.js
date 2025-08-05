@@ -72,7 +72,7 @@ function drawStartScreen() {
     ctx.fillRect(0, 0, width, height);
     
     // Desenhar título do jogo
-    ctx.font = '72px Horrorfind-gp0Y';
+    ctx.font = "72px Horrorfind-gp0Y";
     ctx.textAlign = 'center';
     
     // Sombra para o título
@@ -98,7 +98,7 @@ function drawStartScreen() {
     ctx.fillRect(btnX, btnY, btnWidth, btnHeight);
     
     // Texto do botão
-    ctx.font = '24px Press Start 2P';
+    ctx.font = '14px Arial';
     ctx.fillStyle = '#fff';
     ctx.fillText('INICIAR', width/2, btnY + btnHeight/2 + 8);
     
@@ -140,13 +140,6 @@ function drawStartScreen() {
 }
 
 function onDeviceReady() {
-  /*
-  if (device.platform == "browser") // Eventos do Mouse (desktop)
-    document.getElementById('btn-iniciar').addEventListener('click', closeStartScreen );
-  else
-    document.getElementById('btn-iniciar').addEventListener('touchstart', closeStartScreen);
-  */
-
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";  
     
