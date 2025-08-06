@@ -16,6 +16,7 @@ class Game {
   controls = [];
   fps = 0; // Frames per second  
   gameTime = 0; // Tempo de jogo em segundos
+  gameState = 'inactive'; //
   deltaTime = 0; // valor inicial em ms
   _framesThisSecond = 0;
   _lastFpsUpdate = performance.now();
@@ -371,6 +372,15 @@ class Game {
     this.ctx.restore();
   }
 
+  clearInit() {
+      // Criar um efeito de fade-out
+      let opacity = 1.0;
+      const fadeOut = setInterval(() => { opacity -= 0.05; if (opacity <= 0) { clearInterval(fadeOut); this.start(); return; }
+        this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      }, 30);
+  }    
+
   drawMapWin() {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -478,8 +488,22 @@ class Game {
     this.checkCollisions();
   };
 
-  start() {
+  init() {  
+    this.gameState = 'active';
+    console.log(' |-> Iniciando animação...');
     this.animate();
+  }
+
+  start() {
+    this.gameState = 'started';
+    console.log('Criando mapa...');
+    window.game.map = new Map1();
+  
+    console.log('Carregando mapa...');
+    window.game.map.load();
+  
+    console.log('Adicionando eventos...');
+    window.game.addEvents();  
   }
    
   // Precisa ser uma função arrow para ser passada como callback do requestAnimationFrame
@@ -500,7 +524,9 @@ class Game {
     this.map.draw();    
     this.drawControls();
     
-    if (this.isPaused) {
+    if (this.gameState == 'active') {
+      this.drawInit();
+    } else if (this.isPaused) {
       this.drawPause();
     } else if (this.player.isDead == true) {
       this.drawGameOver();

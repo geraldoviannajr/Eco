@@ -153,13 +153,8 @@ function onDeviceReady() {
     );  
   }
 
-  drawStartScreen();
-}
-
-function startGame() {      
   console.log('Iniciando jogo em plataforma: ' + device.platform + '...');  
-  //document.getElementById('tela-inicial').style.display = 'none';      
-  //document.getElementById('gameCanvas').style.display = 'block';
+  document.getElementById('gameCanvas').style.display = 'block';
 
   console.log('Criando jogo...');
   window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);   
@@ -167,14 +162,7 @@ function startGame() {
   console.log('Criando idioma...');
   window.game.language = new Language('pt_br');
 
-  console.log('Criando mapa...');
-  window.game.map = new Map1();
-
-  console.log('Carregando mapa...');
-  window.game.map.load();
-
-  console.log('Adicionando eventos...');
-  window.game.addEvents();
+  console.log('Adicionando eventos principais...');
   document.addEventListener("pause",() => {window.game.pause();},false);
   window.addEventListener("resize", resizeCanvas);
  
@@ -182,5 +170,5 @@ function startGame() {
   resizeCanvas();
 
   console.log('Iniciando jogo...');
-  window.game.start();     
+  window.game.init();     
 }
