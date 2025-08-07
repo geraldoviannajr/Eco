@@ -93,13 +93,13 @@
                 text-shadow: 0.1em 0.1em 4px rgba(0, 0, 0, 1)
             }          
             
-            #tela-inicial {
+            #start_screen {
                 opacity: 1;
                 transition: opacity 0.7s ease;
                 pointer-events: all;
             }
 
-            #tela-inicial.fade-out {
+            #start_screen.fade-out {
                 opacity: 0;
                 pointer-events: none;
             }      
@@ -144,17 +144,17 @@
         <script src="js/objects/player.js"></script>
         <script src="js/maps/map.js"></script>
         <script src="js/maps/map1.js"></script>    
-        <script src="js/game.js"></script>        
+        <script src="js/game.js"></script>
 
-        <canvas id="gameCanvas"></canvas>
-        <!--<canvas id="gameCanvas" style="display: none;"></canvas>-->
+        <!--<canvas id="gameCanvas"></canvas>-->
+        <canvas id="gameCanvas" style="display: none;"></canvas>
         <!--<div id="gameover_screen" class="overlay overlay red"><div class="text">** VOCÊ MORREU **</div></div>-->
 
-        <!--<div id="tela-inicial" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #111;">
-            <h1 class="horror" style="font-size: 7rem; color: #fff; margin-bottom: 10px;">ECHO HUNTERS</h1>
-            <button id="btn-iniciar" style="padding: 20px 60px; font-size: 1.5em; border: none; border-radius: 8px; background: #ff0055; color: #fff; cursor: pointer; font-family: 'PressStart2P-Regular', monospace; box-shadow: 0 4px 16px #0008;">Iniciar</button>
+        <div id="start_screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #111;">
+            <h1 class="horror" style="font-size: 7rem;color: #f1efef;margin-bottom: 10px;margin-top: 10px; text-shadow: 5px 5px #a32a2a;">ECHO HUNTERS</h1>
+            <button id="start_btn" style="padding: 20px 60px;font-size: 1.5em;border: none;border-radius: 8px;background: #4b4849;color: #fff;cursor: pointer;font-family: 'PressStart2P-Regular', monospace;box-shad;box-shadow: 0 4px 16px #8f020288;">Iniciar</button>
             <div style="position: absolute; bottom: 16px; color: #444; font-size: 0.9em;">&copy; 2025 geraldoviannajr@gmail.com</div>
-        </div>-->
+        </div>
 
         <script src="js/index.js"></script>
     </body>

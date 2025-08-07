@@ -343,44 +343,7 @@ class Game {
     this.player.bag.drawInventory(this.ctx);
   };
 
-  drawInit() {
-    const width = config.GAME_SCREEN_WIDTH;
-    const height = config.GAME_SCREEN_HEIGHT;
-    const gradient = ctx.createRadialGradient(width/2, height/2, 10, width/2, height/2, height);
-
-    gradient.addColorStop(0, '#333');
-    gradient.addColorStop(1, '#111');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    this.ctx.save();
-    this.ctx.font = "62px Horrorfind-gp0Y";
-    this.ctx.textAlign = "center";
-    this.ctx.textBaseline = "middle";    
-
-    const centerX = this.ctx.canvas.width / 2;
-    const centerY = this.ctx.canvas.height / 2;
-
-    // Sombra para o título
-    ctx.fillStyle = '#000';
-    ctx.fillText('ECHO HUNTERS', centerX + 4, centerY + 4);
-    
-    // Título
-    ctx.fillStyle = '#ff0055';
-    ctx.fillText('ECHO HUNTERS', centerX, centerY);
-    
-    this.ctx.restore();
-  }
-
-  clearInit() {
-      // Criar um efeito de fade-out
-      let opacity = 1.0;
-      const fadeOut = setInterval(() => { opacity -= 0.05; if (opacity <= 0) { clearInterval(fadeOut); this.start(); return; }
-        this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      }, 30);
-  }    
-
+  
   drawMapWin() {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -489,9 +452,28 @@ class Game {
   };
 
   init() {  
-    this.gameState = 'active';
-    console.log(' |-> Iniciando animação...');
-    this.animate();
+    document.getElementById('gameCanvas').style.display = 'none';  
+    document.getElementById('start_screen').style.display = 'flex';
+
+    document.getElementById('start_btn').addEventListener('click', function() {
+
+      // Criar um efeito de fade-out
+      let opacity = 1.0;
+      const fadeOut = setInterval(() => { 
+        opacity -= 0.05; 
+        if (opacity <= 0) { 
+          clearInterval(fadeOut); 
+          document.getElementById('gameCanvas').style.display = 'block';  
+          document.getElementById('start_screen').style.display = 'none';
+          window.game.start();
+          return; 
+        }            
+        // Desenhar um retângulo semi-transparente sobre a tela inicial
+        ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }, 30);
+
+    });
   }
 
   start() {
@@ -504,6 +486,9 @@ class Game {
   
     console.log('Adicionando eventos...');
     window.game.addEvents();  
+
+    console.log(' |-> Iniciando animação...');
+    this.animate();
   }
    
   // Precisa ser uma função arrow para ser passada como callback do requestAnimationFrame
@@ -521,12 +506,13 @@ class Game {
     }
 
     this.drawBackground();
-    this.map.draw();    
-    this.drawControls();
     
-    if (this.gameState == 'active') {
-      this.drawInit();
-    } else if (this.isPaused) {
+    if (this.map != null) {
+      this.map.draw(); 
+      this.drawControls();
+    }    
+        
+    if (this.isPaused) {
       this.drawPause();
     } else if (this.player.isDead == true) {
       this.drawGameOver();
@@ -535,7 +521,7 @@ class Game {
     } else if (this.map.mapStarted && !this.player.isDead && !this.isPaused) {
       this.update();      
     }
-   
+  
     if (config.DEBUG || config.DEBUG_INFO) { 
       this.drawInfo(); 
     }

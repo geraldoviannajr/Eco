@@ -37,108 +37,6 @@ function resizeCanvas() {
   game.canvas.style.top = 'calc(100% / 2 - '+ (height /2) +'px)';  
 }
 
-function closeStartScreen() {
-  // Efeito de fade-out
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-  
-  // Criar um efeito de fade-out
-  let opacity = 1.0;
-  const fadeOut = setInterval(() => { opacity -= 0.05; if (opacity <= 0) { clearInterval(fadeOut); startGame(); return; }    
-    // Desenhar um retângulo semi-transparente sobre a tela inicial
-    ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, 30);
-}
-
-function drawStartScreen() {
-    // Criar um canvas temporário para a tela inicial
-    const canvas = document.getElementById('gameCanvas');
-    canvas.style.display = 'block'; // Torna o canvas visível
-    
-    const ctx = canvas.getContext('2d');
-    const width = config.GAME_SCREEN_WIDTH;
-    const height = config.GAME_SCREEN_HEIGHT;
-    
-    // Definir dimensões do canvas
-    canvas.width = width;
-    canvas.height = height;
-    
-    // Fundo escuro com gradiente
-    const gradient = ctx.createRadialGradient(width/2, height/2, 10, width/2, height/2, height);
-    gradient.addColorStop(0, '#333');
-    gradient.addColorStop(1, '#111');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-    
-    // Desenhar título do jogo
-    ctx.font = "72px Horrorfind-gp0Y";
-    ctx.textAlign = 'center';
-    
-    // Sombra para o título
-    ctx.fillStyle = '#000';
-    ctx.fillText('ECHO HUNTERS', width/2 + 4, height/3 + 4);
-    
-    // Título
-    ctx.fillStyle = '#ff0055';
-    ctx.fillText('ECHO HUNTERS', width/2, height/3);
-    
-    // Desenhar botão de iniciar
-    const btnWidth = 240;
-    const btnHeight = 60;
-    const btnX = (width - btnWidth) / 2;
-    const btnY = height * 0.6;
-    
-    // Sombra do botão
-    ctx.fillStyle = '#000';
-    ctx.fillRect(btnX + 4, btnY + 4, btnWidth, btnHeight);
-    
-    // Botão
-    ctx.fillStyle = '#ff0055';
-    ctx.fillRect(btnX, btnY, btnWidth, btnHeight);
-    
-    // Texto do botão
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#fff';
-    ctx.fillText('INICIAR', width/2, btnY + btnHeight/2 + 8);
-    
-    // Copyright
-    ctx.font = '12px Arial';
-    ctx.fillStyle = '#444';
-    ctx.fillText('© 2025 geraldoviannajr@gmail.com', width/2, height - 20);
-    
-    // Adicionar evento de clique ao canvas para o botão iniciar
-    canvas.addEventListener('click', function handleClick(event) {
-        // Converter coordenadas do clique para coordenadas do canvas
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (event.clientX - rect.left) * scaleX;
-        const y = (event.clientY - rect.top) * scaleY;
-        
-        // Verificar se o clique foi no botão
-        if (x >= btnX && x <= btnX + btnWidth && y >= btnY && y <= btnY + btnHeight) {
-            canvas.removeEventListener('click', handleClick);
-            closeStartScreen();
-        }
-    });
-    
-    // Adicionar evento de toque para dispositivos móveis
-    canvas.addEventListener('touchstart', function handleTouch(event) {
-        event.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (event.touches[0].clientX - rect.left) * scaleX;
-        const y = (event.touches[0].clientY - rect.top) * scaleY;
-        
-        if (x >= btnX && x <= btnX + btnWidth && y >= btnY && y <= btnY + btnHeight) {
-            canvas.removeEventListener('touchstart', handleTouch);
-            closeStartScreen();
-        }
-    });
-}
-
 function onDeviceReady() {
   document.body.style.overflow = "hidden";
   document.documentElement.style.overflow = "hidden";  
@@ -169,6 +67,6 @@ function onDeviceReady() {
   console.log('Ajustando tamanho da tela...');
   resizeCanvas();
 
-  console.log('Iniciando jogo...');
+  console.log('Iniciando jogo...');  
   window.game.init();     
 }
