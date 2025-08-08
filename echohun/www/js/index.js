@@ -23,6 +23,9 @@ document.addEventListener("deviceready", onDeviceReady, false);
 
 // Ajuste o tamanho visual via CSS para preencher a tela mantendo a proporção
 function resizeCanvas() {
+  if (!window.game)
+    return;
+
   const aspect = config.GAME_SCREEN_WIDTH / config.GAME_SCREEN_HEIGHT;
   let width = window.innerWidth;
   let height = window.innerHeight;
@@ -54,19 +57,6 @@ function onDeviceReady() {
   console.log('Iniciando jogo em plataforma: ' + device.platform + '...');  
   document.getElementById('gameCanvas').style.display = 'block';
 
-  console.log('Criando jogo...');
-  window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);   
-  
-  console.log('Criando idioma...');
-  window.game.language = new Language('pt_br');
-
-  console.log('Adicionando eventos principais...');
-  document.addEventListener("pause",() => {window.game.pause();},false);
-  window.addEventListener("resize", resizeCanvas);
- 
-  console.log('Ajustando tamanho da tela...');
-  resizeCanvas();
-
-  console.log('Iniciando jogo...');  
-  window.game.init();     
+  console.log('Iniciando Game');
+  Game.init();
 }

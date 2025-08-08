@@ -22,7 +22,7 @@ class Game {
   _lastFpsUpdate = performance.now();
   _lastFrameTime = performance.now();
 
-  constructor(w, h) {
+  constructor(w, h) {    
     this.lines = [];
     this.keys = {};
     this.keyPressTimes = {};
@@ -42,7 +42,7 @@ class Game {
     }
        
     this.ctx.scale(1, 1);
-    //this.ctx.imageSmoothingEnabled = false; // Desativa o suavizado de imagem para evitar borrões
+    //this.ctx.imageSmoothingEnabled = false; // Desativa o suavizado de imagem para evitar borrões  
 
     console.log('|-> Criando jogador...');
     this.player = new Player(0, 0); // Cria o jogador na posição inicial (0, 0);
@@ -343,7 +343,6 @@ class Game {
     this.player.bag.drawInventory(this.ctx);
   };
 
-  
   drawMapWin() {
     this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -451,29 +450,44 @@ class Game {
     this.checkCollisions();
   };
 
-  init() {  
+  static init() {      
     document.getElementById('gameCanvas').style.display = 'none';  
     document.getElementById('start_screen').style.display = 'flex';
 
-    document.getElementById('start_btn').addEventListener('click', function() {
-
+    var btnClick = () => {
       // Criar um efeito de fade-out
-      let opacity = 1.0;
+      let opacity = 100;
       const fadeOut = setInterval(() => { 
-        opacity -= 0.05; 
-        if (opacity <= 0) { 
+        opacity -= 1; 
+        if (opacity <= -10) { 
           clearInterval(fadeOut); 
           document.getElementById('gameCanvas').style.display = 'block';  
           document.getElementById('start_screen').style.display = 'none';
+
+          console.log('Criando jogo...');
+          window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT, 1);   
+
+          console.log('Adicionando eventos principais...');
+          window.addEventListener("resize", resizeCanvas);
+          document.addEventListener("pause",() => {window.game.pause();},false);
+         
+          console.log('Ajustando tamanho da tela...');
+          resizeCanvas();
+        
+          console.log(' |-> Criando idioma...');
+          window.game.language = new Language('pt_br');        
+        
+          console.log(' |-> Iniciando jogo...');        
           window.game.start();
           return; 
         }            
-        // Desenhar um retângulo semi-transparente sobre a tela inicial
-        ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }, 30);
+        if (opacity > 1) 
+          document.getElementById('start_screen').style.opacity = opacity + '%';
+      }, 50);
+    };
 
-    });
+    document.getElementById('start_btn').addEventListener('click', btnClick);
+    document.getElementById('start_btn').addEventListener('touchstart', btnClick);  
   }
 
   start() {
