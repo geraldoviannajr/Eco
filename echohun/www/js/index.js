@@ -21,6 +21,12 @@
 // See https://cordova.apache.org/docs/en/latest/cordova/events/events.html#deviceready
 document.addEventListener("deviceready", onDeviceReady, false);
 
+function isTouchDevice() {
+  return (('ontouchstart' in window) ||
+           (navigator.maxTouchPoints > 0) ||
+           (navigator.msMaxTouchPoints > 0));
+}
+
 // Ajuste o tamanho visual via CSS para preencher a tela mantendo a proporção
 function resizeCanvas() {
   if (!window.game)

@@ -45,4 +45,3 @@ class PowerUp extends MapObject {
         this.createCircleHitbox(this.x, this.y, this.radius +1);
     }
 }
-
