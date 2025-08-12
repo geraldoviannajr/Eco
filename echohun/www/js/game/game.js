@@ -55,11 +55,12 @@ class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
     console.log(" |-> Carregando idioma...");
     window.game.language = new Language("pt_br");
 
-    console.log(" |-> Desenhando tela inicial...");
-    window.game.drawInit();
+    console.log(" |-> Iniciando jogo...");
+    window.screen = InitScreen;
+    window.game.start();
   
-    document
+    /*document
       .getElementById("gameCanvas")
-      .addEventListener("touchstart", Game._initGameClick);
+      .addEventListener("touchstart", Game._initGameClick);*/
   }
 }

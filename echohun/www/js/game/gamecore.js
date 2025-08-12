@@ -5,6 +5,7 @@ class GameCore {
   player = null;
   lines = [];
   camera = new Camera();
+  screen = null;
   keys = {};
   keyPressTimes = {};
   mouseTarget = null;

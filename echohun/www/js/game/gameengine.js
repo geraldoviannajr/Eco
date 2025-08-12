@@ -73,14 +73,16 @@ const GameEngine = (Base) =>
 
     start() {
       this.gameState = "started";
-      console.log("Criando mapa...");
+
+
+      /*console.log("Criando mapa...");
       window.game.map = new Map1();
 
       console.log("Carregando mapa...");
       window.game.map.load();
 
       console.log("Adicionando eventos...");
-      window.game.addEvents();
+      window.game.addEvents();*/
 
       console.log(" |-> Iniciando animação...");
       this.animate();
@@ -111,16 +113,12 @@ const GameEngine = (Base) =>
         this.drawPause();
       } else if (this.player.isDead == true) {
         this.drawGameOver();
-      } else if (this.map.mapStarted == false) {
-        this.drawMapWin();
-      } else if (this.map.mapStarted && !this.player.isDead && !this.isPaused) {
-        this.update();
+      /*} else if (this.map.mapStarted == false) {
+        this.drawMapWin();*/
+      } else if (this.screen != null) {
+          this.screen.draw(this.ctx);
       }
-
-      if (config.DEBUG || config.DEBUG_INFO) {
-        this.drawInfo();
-      }
-
+      
       if (!this.isPaused) {
         this.gameTime += this.deltaTime;
       }
