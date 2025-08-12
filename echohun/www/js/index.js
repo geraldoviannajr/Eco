@@ -63,6 +63,16 @@ function onDeviceReady() {
   console.log('Iniciando jogo em plataforma: ' + device.platform + '...');  
   document.getElementById('gameCanvas').style.display = 'block';
 
-  console.log('Iniciando Game');
-  Game.init();
+  console.log("Criando jogo...");
+  window.game = new Game( config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT );
+
+  console.log("Adicionando eventos principais...");
+  window.addEventListener("resize", resizeCanvas);
+  document.addEventListener("pause", () => { window.game.pause(); }, false);
+
+  console.log("Ajustando tamanho da tela...");
+  resizeCanvas();
+
+  console.log(" |-> Criando idioma...");
+  window.game.language = new Language("pt_br");
 }

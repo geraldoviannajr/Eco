@@ -18,12 +18,13 @@
     under the License.
 -->
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <title>Echo Hunters</title>
-    <script src="js/sounds/howler.js"></script>
-    <script src="js/sounds/howler.spatial.min.js"></script>
-    <!--
+
+<head>
+  <meta charset="utf-8" />
+  <title>Echo Hunters</title>
+  <script src="js/sounds/howler.js"></script>
+  <script src="js/sounds/howler.spatial.min.js"></script>
+  <!--
         Customize this policy to fit your own app's needs. For more guidance, please refer to the docs:
             https://cordova.apache.org/docs/en/latest/
         Some notes:
@@ -31,172 +32,154 @@
             * Disables use of inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
                 * Enable inline JS: add 'unsafe-inline' to default-src
         -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;"
-    />
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="msapplication-tap-highlight" content="no" />
-    <meta
-      name="viewport"
-      content="initial-scale=1, width=device-width, viewport-fit=cover"
-    />
-    <meta name="color-scheme" content="light dark" />
-    <style>
-      @font-face {
-        font-family: "Press Start 2P";
-        src: url("assets/PressStart2P-Regular.ttf") format("truetype");
-      }
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+  <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    @font-face {
+      font-family: "Press Start 2P";
+      src: url("assets/PressStart2P-Regular.ttf") format("truetype");
+    }
 
-      @font-face {
-        font-family: "Horrorfind-gp0Y";
-        src: url("assets/Horrorfind-gp0Y.ttf") format("truetype");
-      }
+    @font-face {
+      font-family: "Horrorfind-gp0Y";
+      src: url("assets/Horrorfind-gp0Y.ttf") format("truetype");
+    }
 
-      body {
-        margin: 0;
-        background: #000;
-        overflow: hidden;
-        width: 100vw;
-        height: 100vh;
-        position: absolute;
-        display: block;
-        top: 0;
-        left: 0;
-      }
+    body {
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      display: block;
+      top: 0;
+      left: 0;
+    }
 
-      canvas {
-        display: block; /* Alterado de 'none' para 'block' para garantir que o canvas seja visível */
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: #000;
-      }
+    canvas {
+      display: block;
+      /* Alterado de 'none' para 'block' para garantir que o canvas seja visível */
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+    }
 
-      .overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        display: none;
-        place-content: center;
-        place-items: center;
-      }
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      place-content: center;
+      place-items: center;
+    }
 
-      .overlay.red {
-        background-color: rgba(255, 0, 0, 0.5);
-      }
+    .overlay.red {
+      background-color: rgba(255, 0, 0, 0.5);
+    }
 
-      .overlay.green {
-        background-color: rgba(0, 255, 0, 0.5);
-      }
+    .overlay.green {
+      background-color: rgba(0, 255, 0, 0.5);
+    }
 
-      .overlay.blue {
-        background-color: rgba(0, 0, 255, 0.5);
-      }
+    .overlay.blue {
+      background-color: rgba(0, 0, 255, 0.5);
+    }
 
-      .overlay.active {
-        display: block;
-        z-index: 1000;
-      }
+    .overlay.active {
+      display: block;
+      z-index: 1000;
+    }
 
-      .horror {
-        font-family: "Horrorfind-gp0Y", monospace;
-      }
+    .horror {
+      font-family: "Horrorfind-gp0Y", monospace;
+    }
 
-      .text {
-        font-family: "Horrorfind-gp0Y", monospace;
-        font-size: 2em;
-        color: rgba(255, 255, 255, 0.8);
-        text-align: center;
-        text-shadow: 0.1em 0.1em 4px rgba(0, 0, 0, 1);
-      }
+    .text {
+      font-family: "Horrorfind-gp0Y", monospace;
+      font-size: 2em;
+      color: rgba(255, 255, 255, 0.8);
+      text-align: center;
+      text-shadow: 0.1em 0.1em 4px rgba(0, 0, 0, 1);
+    }
 
-      #start_screen {
-        opacity: 1;
-        transition: opacity 0.7s ease;
-        pointer-events: all;
-      }
+    #start_screen {
+      opacity: 1;
+      transition: opacity 0.7s ease;
+      pointer-events: all;
+    }
 
-      #start_screen.fade-out {
-        opacity: 0;
-        pointer-events: none;
-      }
-    </style>
-  </head>
-  <body>
-    <script src="cordova.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/language/language.js"></script>
-    <script src="js/sounds/sounds.js"></script>
-    <script src="js/echoline.js"></script>
-    <script src="js/objects/mapObject.js"></script>
-    <script src="js/objects/enemies/enemy.js"></script>
-    <script src="js/objects/enemies/darkness.js"></script>
-    <script src="js/objects/enemies/deepdarkness.js"></script>
-    <script src="js/objects/enemies/littledarkness.js"></script>
-    <script src="js/objects/powerups/powerup.js"></script>
-    <script src="js/objects/powerups/puhp.js"></script>
-    <script src="js/colision.js"></script>
-    <script src="js/pathfinder.js"></script>
-    <script src="js/elements/bag.js"></script>
-    <script src="js/elements/control.js"></script>
-    <script src="js/elements/camera.js"></script>
-    <script src="js/elements/hud.js"></script>
-    <script src="js/elements/radar.js"></script>
-    <script src="js/objects/player.js"></script>
-    <script src="js/maps/map.js"></script>
-    <script src="js/maps/map1.js"></script>
-    <script src="js/game/gamecore.js"></script>
-    <script src="js/game/gameengine.js"></script>
-    <script src="js/game/gameevents.js"></script>
-    <script src="js/game/gamecontrols.js"></script>
-    <script src="js/game/gamescreens.js"></script>
-    <script src="js/game/game.js"></script>
+    #start_screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
 
-    <!--<canvas id="gameCanvas"></canvas>-->
-    <canvas id="gameCanvas" style="display: none"></canvas>
-    <!--<div id="gameover_screen" class="overlay overlay red"><div class="text">** VOCÊ MORREU **</div></div>-->
+<body>
+  <script src="cordova.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/language/language.js"></script>
+  <script src="js/sounds/sounds.js"></script>
+  <script src="js/echoline.js"></script>
+  <script src="js/objects/mapObject.js"></script>
+  <script src="js/objects/enemies/enemy.js"></script>
+  <script src="js/objects/enemies/darkness.js"></script>
+  <script src="js/objects/enemies/deepdarkness.js"></script>
+  <script src="js/objects/enemies/littledarkness.js"></script>
+  <script src="js/objects/powerups/powerup.js"></script>
+  <script src="js/objects/powerups/puhp.js"></script>
+  <script src="js/colision.js"></script>
+  <script src="js/pathfinder.js"></script>
+  <script src="js/elements/bag.js"></script>
+  <script src="js/elements/control.js"></script>
+  <script src="js/elements/camera.js"></script>
+  <script src="js/elements/hud.js"></script>
+  <script src="js/elements/radar.js"></script>
+  <script src="js/objects/player.js"></script>
+  <script src="js/maps/map.js"></script>
+  <script src="js/maps/map1.js"></script>
+  <script src="js/game/gamecore.js"></script>
+  <script src="js/game/gameengine.js"></script>
+  <script src="js/game/gameevents.js"></script>
+  <script src="js/game/gamecontrols.js"></script>
+  <script src="js/game/gamescreens.js"></script>
+  <script src="js/game/game.js"></script>
 
-    <div
-      id="start_screen"
-      style="
+  <canvas id="gameCanvas" style="display: none"></canvas>
+
+  <div id="start_screen" style="
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100vh;
         background: #111;
-      "
-    >
-      <h1
-        class="horror"
-        style="
+      ">
+    <h1 class="horror" style="
           font-size: 7rem;
           color: #f1efef;
           margin-bottom: 35px;
           margin-top: 20px;
           text-shadow: 5px 5px #a32a2a;
-        "
-      >
-        ECHO HUNTERS
-      </h1>
-      <button
-        id="start_btn"
-        style="padding: 20px 60px;font-size: 1.5em;border: none;border-radius: 8px;background: #4b4849;color: #fff;cursor: pointer;font-family: 'PressStart2P-Regular', monospace;box-shad;box-shadow: 0 4px 16px #8f020288;"
-      >
-        Iniciar
-      </button>
-      <div
-        style="position: absolute; bottom: 16px; color: #444; font-size: 0.9em"
-      >
-        &copy; 2025 geraldoviannajr@gmail.com
-      </div>
+        ">
+      ECHO HUNTERS
+    </h1>
+    <div style="color: #717171;font-size: 1.3em;font-family: Arial;">
+      Toque na tela para iniciar
     </div>
+  </div>
 
-    <script src="js/index.js"></script>
-  </body>
+  <script src="js/index.js"></script>
+</body>
+
 </html>

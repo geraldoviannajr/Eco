@@ -72,7 +72,7 @@ class Sounds {
     playSpatial(sound, pos, refPos, maxDist = config.MAX_DISTANCE_SOUND) {      
       if (sound == null)
         return;
-      if (config.DEBUG_INFO)
+      if (config.DEBUG_SOUNDS)
         console.log(' |-> 🎵 playSpatial: ', sound);
 
       const dx = pos.x - refPos.x;
@@ -105,12 +105,12 @@ class Sounds {
         if (this.sounds[name]) {            
           if (id > 0) {
             if (!forcenew && this.sounds[name].playing(id)) {
-              if (config.DEBUG_INFO)
+              if (config.DEBUG_SOUNDS)
                 console.warn(` |-> 🎵 Sound "${name}"-"${sprite}" is already playing.`);
 
               return null;
             } else {
-              if (config.DEBUG_INFO)
+              if (config.DEBUG_SOUNDS)
                 console.log(` |-> 🎵 Stop and play againg sound: "${name}"-"${sprite}".`);
 
               this.sounds[name].stop(id);
@@ -124,7 +124,7 @@ class Sounds {
             }
           }
 
-          if (config.DEBUG_INFO)
+          if (config.DEBUG_SOUNDS)
             console.log(` |-> 🎵 Playing sound: "${name}"-"${sprite}"`);
 
           if (sprite != null) {

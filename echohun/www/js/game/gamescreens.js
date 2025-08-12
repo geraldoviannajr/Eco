@@ -5,6 +5,24 @@ const GameScreens = (Base) =>
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
+    drawInit() {
+      this.ctx.fillStyle = "rgb(0, 0, 0)";
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+      const message = "ECHO HUNTERS";
+      this.ctx.save();
+      this.ctx.font = "78px Horrorfind-gp0Y";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+
+      const centerX = (this.ctx.canvas.width / 2);
+      const centerY = (this.ctx.canvas.height / 2) - 30;
+
+      this.ctx.fillStyle = "white";
+      this.ctx.fillText(message, centerX, centerY);
+      this.ctx.restore();
+    }
+    
     drawGameOver() {
       this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);

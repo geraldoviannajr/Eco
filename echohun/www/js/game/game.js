@@ -10,46 +10,58 @@ class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
     }
   }
 
-  drawInfo() {
-    const msg =
-      "FPS: " +
-      this.fps +
-      " | Dim.: (" +
-      this.canvas.width +
-      " x " +
-      this.canvas.height +
-      ")" +
-      " | Player: (" +
-      Math.round(this.player.x) +
-      ", " +
-      Math.round(this.player.y) +
-      ")" +
-      " | Camera: (" +
-      Math.round(this.camera.x) +
-      ", " +
-      Math.round(this.camera.y) +
-      ")" +
-      " | Mouse: (" +
-      (this.mousePos ? Math.round(this.mousePos.x) : "N/A") +
-      ", " +
-      (this.mousePos ? Math.round(this.mousePos.y) : "N/A") +
-      ")" +
-      " | Target: (" +
-      (this.mouseTarget ? Math.round(this.mouseTarget.x) : "N/A") +
-      ", " +
-      (this.mouseTarget ? Math.round(this.mouseTarget.y) : "N/A") +
-      ")" +
-      " | Headphone: " +
-      (this.sounds.isHeadphone ? "ON" : "OFF") +
-      " | 3D: " +
-      (this.sounds.is3D ? "ON" : "OFF");
+  static _fadeTimeOut = () => {
+    window._globalOpacity -= 1;
 
-    this.ctx.save();
-    this.ctx.textAlign = "left";
-    this.ctx.textBaseline = "top";
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "10px Courier New, monospace";
-    this.ctx.fillText(msg, 10, this.canvas.height - 20);
-    this.ctx.restore();
+    if (window._globalOpacity <= -10) clearTimeout(window._fadeOut);
+    else window._fadeOut = setTimeout(Game._fadeTimeOut, 50);
+
+    if (window._globalOpacity == -10) {
+      document.getElementById("gameCanvas").style.display = "block";
+      document.getElementById("start_screen").style.display = "none";
+
+      console.log("Criando jogo...");
+      window.game = new Game(
+        config.GAME_SCREEN_WIDTH,
+        config.GAME_SCREEN_HEIGHT,
+        1
+      );
+
+      console.log("Adicionando eventos principais...");
+      window.addEventListener("resize", resizeCanvas);
+      document.addEventListener("pause", () => { window.game.pause(); } );
+
+      console.log("Ajustando tamanho da tela...");
+      resizeCanvas();
+
+      console.log(" |-> Criando idioma...");
+      window.game.language = new Language("pt_br");
+
+      console.log(" |-> Iniciando jogo...");
+      window.game.start();
+    }
+    if (window._globalOpacity > 1)
+      document.getElementById("start_screen").style.opacity =
+        window._globalOpacity + "%";
+  };
+
+  static _initGameClick = (e) => {
+    e.preventDefault();
+
+    if (window.game != undefined) return;
+    
+    document
+      .getElementById("start_screen")
+      .removeEventListener("touchstart", Game._initGameClick);
+
+    window._globalOpacity = 100;
+    window._fadeOut = setTimeout(Game._fadeTimeOut, 50);
+  };
+  static init() {
+    document.getElementById("gameCanvas").style.display = "none";
+    document.getElementById("start_screen").style.display = "flex";
+    document
+      .getElementById("start_screen")
+      .addEventListener("touchstart", Game._initGameClick);
   }
 }
