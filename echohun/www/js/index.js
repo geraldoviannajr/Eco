@@ -63,16 +63,10 @@ function onDeviceReady() {
   console.log('Iniciando jogo em plataforma: ' + device.platform + '...');  
   document.getElementById('gameCanvas').style.display = 'block';
 
-  console.log("Criando jogo...");
-  window.game = new Game( config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT );
-
-  console.log("Adicionando eventos principais...");
-  window.addEventListener("resize", resizeCanvas);
-  document.addEventListener("pause", () => { window.game.pause(); }, false);
-
-  console.log("Ajustando tamanho da tela...");
-  resizeCanvas();
-
-  console.log(" |-> Criando idioma...");
-  window.game.language = new Language("pt_br");
+  // Aguardar o carregamento da fonte
+  const font = new FontFace('Horrorfind-gp0Y', 'url(assets/Horrorfind-gp0Y.ttf)');
+  font.load().then(() => {
+    document.fonts.add(font);
+    Game.init();  
+  });    
 }

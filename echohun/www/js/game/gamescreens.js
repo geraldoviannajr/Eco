@@ -11,15 +11,19 @@ const GameScreens = (Base) =>
 
       const message = "ECHO HUNTERS";
       this.ctx.save();
-      this.ctx.font = "78px Horrorfind-gp0Y";
+      this.ctx.font = "150px Horrorfind-gp0Y";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
 
       const centerX = (this.ctx.canvas.width / 2);
       const centerY = (this.ctx.canvas.height / 2) - 30;
 
-      this.ctx.fillStyle = "white";
+      this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
       this.ctx.fillText(message, centerX, centerY);
+
+      this.ctx.font = "24px Arial";
+      this.ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+      this.ctx.fillText("Toque para iniciar", centerX, centerY+90);
       this.ctx.restore();
     }
     
