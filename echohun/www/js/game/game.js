@@ -46,17 +46,16 @@ class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
       config.GAME_SCREEN_HEIGHT
     );
 
-    console.log("Adicionando eventos principais...");
+    console.log("Adicionando eventos do canvas...");
     window.addEventListener("resize", resizeCanvas);
 
     console.log("Ajustando tamanho da tela...");
     resizeCanvas();
 
-    console.log(" |-> Carregando idioma...");
+    console.log("Carregando idioma...");
     window.game.language = new Language("pt_br");
 
-    console.log(" |-> Iniciando jogo...");
-    window.screen = InitScreen;
+    console.log("Iniciando jogo...");
     window.game.start();
   
     /*document

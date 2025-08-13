@@ -74,15 +74,12 @@ const GameEngine = (Base) =>
     start() {
       this.gameState = "started";
 
+      console.log(" |-> Atrubuindo tela de início...");
+      this.screen = InitScreen;
+      this.map = null;
 
-      /*console.log("Criando mapa...");
-      window.game.map = new Map1();
-
-      console.log("Carregando mapa...");
-      window.game.map.load();
-
-      console.log("Adicionando eventos...");
-      window.game.addEvents();*/
+      console.log(" |-> Adicionando eventos do jogo...");
+      this.addEvents();
 
       console.log(" |-> Iniciando animação...");
       this.animate();
