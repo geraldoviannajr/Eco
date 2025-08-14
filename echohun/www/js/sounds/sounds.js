@@ -18,42 +18,42 @@ class Sounds {
       this.sounds = {
         intro: new Howl({
           src: ['assets/sounds/bigdark.mp3'],
-          html5: this.isIOS, // Usar HTML5 no iOS para melhor compatibilidade
+          html5: false, // Usar HTML5 no iOS para melhor compatibilidade
           volume: 0.0
         }),
         step: new Howl({
           src: ['assets/sounds/step1.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           volume: 0.3
         }),
         run: new Howl({
           src: ['assets/sounds/step1.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           volume: 0.2
         }),
         enemy_echo: new Howl({
           src: ['assets/sounds/step1.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           volume: 0.0
         }),
         clap: new Howl({
           src: ['assets/sounds/clap1.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           volume: 0.5
         }),
         ddChasing: new Howl({
           src: ['assets/sounds/bigdark.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           volume: 0
         }),
         beep: new Howl({
           src: ['assets/sounds/beep.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           volume: 0,
         }),
         scream: new Howl({
           src: ['assets/sounds/scream.mp3'],
-          html5 : this.isIOS,
+          html5 : false,
           preload: true,
           sprite: {
             dead: [521, 3408],
