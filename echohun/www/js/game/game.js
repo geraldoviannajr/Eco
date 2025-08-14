@@ -9,6 +9,10 @@ class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
       this.player.stamina = 0; // Custa todas as staminas
     }
   }
+  drawBackground() {
+    this.ctx.fillStyle = "rgb(0, 0, 0)";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  }
 
   static _fadeTimeOut = () => {
     window._globalOpacity -= 1;

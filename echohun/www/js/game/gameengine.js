@@ -87,6 +87,9 @@ const GameEngine = (Base) =>
 
     // Precisa ser uma função arrow para ser passada como callback do requestAnimationFrame
     animate = () => {
+      // Fundo preto
+      this.drawBackground();
+
       const now = performance.now();
       this.deltaTime = now - this._lastFrameTime; // em milissegundos
       this._lastFrameTime = now;
@@ -99,8 +102,10 @@ const GameEngine = (Base) =>
         this._lastFpsUpdate = now;
       }
 
-      this.drawBackground();
+      if (this.player.isDead == true)
+        this.screen = GameoverScreen;
 
+      // Desenho do mapa e controles
       if (this.map != null) {
         this.map.draw();
         this.drawControls();
@@ -108,17 +113,11 @@ const GameEngine = (Base) =>
 
       if (this.isPaused) {
         this.drawPause();
-      } else if (this.player.isDead == true) {
-        this.drawGameOver();
-      /*} else if (this.map.mapStarted == false) {
-        this.drawMapWin();*/
       } else if (this.screen != null) {
-          this.screen.draw(this.ctx);
+        this.screen.draw(this.ctx);
       }
-      
-      if (!this.isPaused) {
-        this.gameTime += this.deltaTime;
-      }
+
+      if (!this.isPaused) this.gameTime += this.deltaTime;
 
       requestAnimationFrame(this.animate);
     };
