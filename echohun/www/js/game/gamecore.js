@@ -4,8 +4,6 @@ class GameCore {
   map = null;
   player = null;
   lines = [];
-  camera = new Camera();
-  screen = null;
   keys = {};
   keyPressTimes = {};
   mouseTarget = null;
@@ -45,6 +43,9 @@ class GameCore {
     this.ctx.scale(1, 1);
     //this.ctx.imageSmoothingEnabled = false; // Desativa o suavizado de imagem para evitar borrões
 
+    console.log("|-> Criando Câmera...");
+    this.camera = new Camera();
+
     console.log("|-> Criando jogador...");
     this.player = new Player(0, 0); // Cria o jogador na posição inicial (0, 0);
 
@@ -56,5 +57,14 @@ class GameCore {
 
     console.log("|-> Criando radar...");
     this.controls.push(new Radar());
+
+    console.log("|-> Criando telas...");
+    this.screens = {
+      init : new InitScreen(this),
+      gameplay : new GameplayScreen(this),
+      gameover: new GameoverScreen(this),
+    }
+
+    this.screen = this.screens.init;
   }
 }

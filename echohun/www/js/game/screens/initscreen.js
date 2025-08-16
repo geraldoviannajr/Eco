@@ -1,7 +1,20 @@
 class InitScreen extends GameScreen {
-  static loaded = false;
-  static draw(ctx) {
-    ctx.fillStyle = "rgb(0, 0, 0)";
+  draw(ctx) {
+    if (this.loaded)
+      this.alpha = 1;
+    else {
+      if (this.fadeStartTime == 0) {
+        this.fadeStartTime = this.game.gameTime;
+        this.alpha == 0
+      }
+      else {
+        this.alpha =
+          (this.game.gameTime - this.fadeStartTime) / this.fadeduration;
+        if (this.alpha > 1) this.alpha = 1;
+      }
+    }
+
+    ctx.fillStyle = "rgba(0, 0, 0, " + this.alpha + ")";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     const message = "ECHO HUNTERS";
@@ -13,19 +26,21 @@ class InitScreen extends GameScreen {
     const centerX = ctx.canvas.width / 2;
     const centerY = ctx.canvas.height / 2 - 30;
 
-    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+    ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
     ctx.fillText(message, centerX, centerY);
 
     ctx.font = "24px Arial";
-    ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+    ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
     ctx.fillText("Toque para iniciar", centerX, centerY + 90);
     ctx.restore();
-    InitScreen.loaded = true;
+
+    if (this.alpha >= 1)
+      this.loaded = true;
   }
 
-  static doEvent(eventName, e) {
+  doEvent(eventName, e) {
     var game = window.game;
-    if (!InitScreen.loaded)
+    if (!this.loaded)
       return;
 
     switch (eventName) {
@@ -56,9 +71,12 @@ class InitScreen extends GameScreen {
       
         console.log("Criando mapa...");
         game.map = new Map1();        
+
         console.log("Carregando mapa...");
         game.map.load();
-        game.screen = GameplayScreen;
+        
+        console.log("Carregando Gameplay...")
+        game.screen = game.screens.gameplay;
         break;
     }
   }

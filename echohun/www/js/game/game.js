@@ -1,4 +1,4 @@
-class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
+class Game extends GameEngine(GameEvents(GameControls(GameCore))) {
   emitClap() {
     if (
       this.player.stamina >= config.MIN_STAMINA_CLAP &&
@@ -14,41 +14,33 @@ class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  static _fadeTimeOut = () => {
-    window._globalOpacity -= 1;
+  drawPause() {
+    this.player.bag.drawInventory(this.ctx);
+  }
 
-    if (window._globalOpacity <= -10) clearTimeout(window._fadeOut);
-    else window._fadeOut = setTimeout(Game._fadeTimeOut, 50);
+  drawMapWin() {
+    this.ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    if (window._globalOpacity == -10) {
-      document.getElementById("gameCanvas").style.display = "block";
-      document.getElementById("start_screen").style.display = "none";
+    const message = "YOU WIN";
+    this.ctx.save();
+    this.ctx.font = "62px Horrorfind-gp0Y";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
 
-      console.log(" |-> Iniciando jogo...");
-      document.addEventListener("pause", () => { window.game.pause(); } );
-      window.game.start();
-    }
-    if (window._globalOpacity > 1)
-      document.getElementById("start_screen").style.opacity =
-        window._globalOpacity + "%";
-  };
+    const centerX = this.ctx.canvas.width / 2;
+    const centerY = this.ctx.canvas.height / 2;
+    //const textWidth = this.ctx.measureText(message).width;
+    //const padding = 40;
 
-  static _initGameClick = (e) => {
-    e.preventDefault();
+    this.ctx.fillStyle = "white";
+    this.ctx.fillText(message, centerX, centerY);
+    this.ctx.restore();
+  }
 
-    document
-      .getElementById("gameCanvas")
-      .removeEventListener("touchstart", Game._initGameClick);
-
-    window._globalOpacity = 100;
-    window._fadeOut = setTimeout(Game._fadeTimeOut, 50);
-  };
   static init() {
     console.log("Criando jogo...");
-    window.game = new Game(
-      config.GAME_SCREEN_WIDTH,
-      config.GAME_SCREEN_HEIGHT
-    );
+    window.game = new Game(config.GAME_SCREEN_WIDTH, config.GAME_SCREEN_HEIGHT);
 
     console.log("Adicionando eventos do canvas...");
     window.addEventListener("resize", resizeCanvas);
@@ -61,9 +53,5 @@ class Game extends GameScreens(GameEngine(GameEvents(GameControls(GameCore)))) {
 
     console.log("Iniciando jogo...");
     window.game.start();
-  
-    /*document
-      .getElementById("gameCanvas")
-      .addEventListener("touchstart", Game._initGameClick);*/
   }
 }

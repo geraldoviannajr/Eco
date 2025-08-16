@@ -53,5 +53,9 @@ const GameEvents = (Base) =>
           this.doEvent("touchmove", e);
         });
       }
+
+      document.addEventListener("pause", () => {
+        window.game.pause();
+      });     
     }
   };

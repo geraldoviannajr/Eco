@@ -74,10 +74,6 @@ const GameEngine = (Base) =>
     start() {
       this.gameState = "started";
 
-      console.log(" |-> Atrubuindo tela de início...");
-      this.screen = InitScreen;
-      this.map = null;
-
       console.log(" |-> Adicionando eventos do jogo...");
       this.addEvents();
 
@@ -103,7 +99,7 @@ const GameEngine = (Base) =>
       }
 
       if (this.player.isDead == true)
-        this.screen = GameoverScreen;
+        this.screen = this.screens.gameover;
 
       // Desenho do mapa e controles
       if (this.map != null) {

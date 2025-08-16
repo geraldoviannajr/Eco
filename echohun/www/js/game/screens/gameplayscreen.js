@@ -1,12 +1,16 @@
 class GameplayScreen extends GameScreen {
-  static draw(ctx, canvas) {
+  draw(ctx) {
+    this.loaded = true;
     window.game.update();
     if (config.DEBUG || config.DEBUG_INFO) {
       window.game.drawInfo();
     }
   }
 
-  static doEvent(eventName, e) {
+  doEvent(eventName, e) {
+    if (!this.loaded)
+      return;
+
     var game = window.game;
 
     switch (eventName) {

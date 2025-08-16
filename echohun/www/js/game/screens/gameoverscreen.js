@@ -1,6 +1,5 @@
 class GameoverScreen extends GameScreen {
-  static loaded = false;
-  static draw(ctx) {
+  draw(ctx) {
     ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -16,12 +15,13 @@ class GameoverScreen extends GameScreen {
     ctx.fillText(message, centerX, centerY);
     ctx.restore();
 
-    GameoverScreen.loaded = true;
+    this.loaded = true;
   }
 
-  static doEvent(eventName, e) {
+  doEvent(eventName, e) {
     var game = window.game;
-    if (!InitScreen.loaded) return;
+    if (!this.loaded) 
+      return;
 
     switch (eventName) {
       case "touchstart":
