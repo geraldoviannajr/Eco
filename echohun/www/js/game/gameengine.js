@@ -98,23 +98,16 @@ const GameEngine = (Base) =>
         this._lastFpsUpdate = now;
       }
 
-      if (this.player.isDead == true)
-        this.screen = this.screens.gameover;
+      if (this.player.isDead == true) this.screen = this.screens.gameover;
 
-      // Desenho do mapa e controles
-      if (this.map != null) {
-        this.map.draw();
-        this.drawControls();
-      }
+      if (this.isPaused) this.screen = this.screens.pause;
 
-      if (this.isPaused) {
-        this.drawPause();
-      } else if (this.screen != null) {
+      if (this.screen != null) {
         this.screen.draw(this.ctx);
+
+        if (!this.isPaused) this.gameTime += this.deltaTime;
+
+        requestAnimationFrame(this.animate);
       }
-
-      if (!this.isPaused) this.gameTime += this.deltaTime;
-
-      requestAnimationFrame(this.animate);
     };
   };

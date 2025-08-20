@@ -1,10 +1,10 @@
-class GameoverScreen extends GameScreen {
+class PauseScreen extends GameScreen {
   draw(ctx) {
     super.draw(ctx);
     ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    const message = "YOU DIED";
+    const message = "PAUSED";
     ctx.save();
     ctx.font = "78px Horrorfind-gp0Y";
     ctx.textAlign = "center";

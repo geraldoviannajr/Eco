@@ -21,6 +21,13 @@ class GameCore {
   _lastFpsUpdate = performance.now();
   _lastFrameTime = performance.now();
 
+  loadScreen(screen) {
+    if (this.screen != null)
+      this.screen.unload( () => { screen.load(); } );
+    else
+      screen.load();
+  }
+
   constructor(w, h) {
     this.lines = [];
     this.keys = {};
@@ -63,6 +70,7 @@ class GameCore {
       init : new InitScreen(this),
       gameplay : new GameplayScreen(this),
       gameover: new GameoverScreen(this),
+      pause: new PauseScreen(this)
     }
 
     this.screen = this.screens.init;

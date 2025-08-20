@@ -1,11 +1,6 @@
 const GameControls = (Base) =>
   class extends Base {
-    drawControls() {
-      for (const control of this.controls) {
-        control.draw();
-      }
-    }
-
+    
     checkControls(x, y, doClick = false) {
       var mouseX = x;
       var mouseY = y;

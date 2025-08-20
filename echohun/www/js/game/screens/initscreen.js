@@ -1,18 +1,6 @@
 class InitScreen extends GameScreen {
   draw(ctx) {
-    if (this.loaded)
-      this.alpha = 1;
-    else {
-      if (this.fadeStartTime == 0) {
-        this.fadeStartTime = this.game.gameTime;
-        this.alpha == 0
-      }
-      else {
-        this.alpha =
-          (this.game.gameTime - this.fadeStartTime) / this.fadeduration;
-        if (this.alpha > 1) this.alpha = 1;
-      }
-    }
+    super.draw(ctx);
 
     ctx.fillStyle = "rgba(0, 0, 0, " + this.alpha + ")";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -33,20 +21,15 @@ class InitScreen extends GameScreen {
     ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
     ctx.fillText("Toque para iniciar", centerX, centerY + 90);
     ctx.restore();
-
-    if (this.alpha >= 1)
-      this.loaded = true;
   }
 
   doEvent(eventName, e) {
     var game = window.game;
-    if (!this.loaded)
-      return;
+    if (!this.loaded) return;
 
     switch (eventName) {
       case "touchstart":
-      case "mousedown":     
-      
+      case "mousedown":
         if (window.game.sounds == null) {
           console.log("|-> Criando sons...");
           window.game.sounds = new Sounds();
@@ -68,15 +51,18 @@ class InitScreen extends GameScreen {
             });
           }
         }
-      
+
         console.log("Criando mapa...");
-        game.map = new Map1();        
+        game.map = new Map1();
 
         console.log("Carregando mapa...");
         game.map.load();
-        
-        console.log("Carregando Gameplay...")
-        game.screen = game.screens.gameplay;
+
+        this.unload(() => {
+          console.log("Carregando Gameplay...");
+          game.screen = game.screens.gameplay;
+        });
+
         break;
     }
   }

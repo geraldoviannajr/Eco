@@ -1,6 +1,23 @@
 class GameplayScreen extends GameScreen {
+  drawControls() {
+    for (const control of window.game.controls) {
+      control.draw();
+    }
+  }
+
+  load() {
+    //super.load();
+  }
+
   draw(ctx) {
+    //super.draw(ctx);
     this.loaded = true;
+
+    // Desenho do mapa e controles
+    if (window.game.map != null) {
+      window.game.map.draw();
+      this.drawControls();
+    }
     window.game.update();
     if (config.DEBUG || config.DEBUG_INFO) {
       window.game.drawInfo();
@@ -8,8 +25,7 @@ class GameplayScreen extends GameScreen {
   }
 
   doEvent(eventName, e) {
-    if (!this.loaded)
-      return;
+    if (!this.loaded) return;
 
     var game = window.game;
 
@@ -145,10 +161,8 @@ class GameplayScreen extends GameScreen {
               var rect = game.canvas.getBoundingClientRect();
               var scaleX = game.canvas.width / rect.width;
               var scaleY = game.canvas.height / rect.height;
-              var mouseX =
-                (touch.clientX - rect.left) * scaleX + game.camera.x;
-              var mouseY =
-                (touch.clientY - rect.top) * scaleY + game.camera.y;
+              var mouseX = (touch.clientX - rect.left) * scaleX + game.camera.x;
+              var mouseY = (touch.clientY - rect.top) * scaleY + game.camera.y;
               game.mouseTarget = { x: mouseX, y: mouseY };
               break;
             }
@@ -189,29 +203,26 @@ class GameplayScreen extends GameScreen {
         break;
 
       case "touchcancel":
-          if (config.DEBUG_INFO)
-            console.log(
-              '👆 Evento "TouchCancel" detectado: ',
-              e.changedTouches
-            );
+        if (config.DEBUG_INFO)
+          console.log('👆 Evento "TouchCancel" detectado: ', e.changedTouches);
 
-          if (game.idTouchPlayerMove >= 0) {
-            // Verifica se o toque que está sendo cancelado é o que move o jogador
-            for (let i = 0; i < e.changedTouches.length; i++) {
-              const touch = e.changedTouches[i];
-              if (touch.identifier === game.idTouchPlayerMove) {
-                if (config.DEBUG_INFO)
-                  console.log(" |-> Cancelando toque do jogador...");
+        if (game.idTouchPlayerMove >= 0) {
+          // Verifica se o toque que está sendo cancelado é o que move o jogador
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            const touch = e.changedTouches[i];
+            if (touch.identifier === game.idTouchPlayerMove) {
+              if (config.DEBUG_INFO)
+                console.log(" |-> Cancelando toque do jogador...");
 
-                game.isMousePressed = false;
-                game.mouseTarget = null;
-                game.player.wasIdle = true;
-                game.player.forceNextStep = true;
-                game.idTouchPlayerMove = -1; // Reseta o ID do toque
-                break;
-              }
+              game.isMousePressed = false;
+              game.mouseTarget = null;
+              game.player.wasIdle = true;
+              game.player.forceNextStep = true;
+              game.idTouchPlayerMove = -1; // Reseta o ID do toque
+              break;
             }
           }
+        }
         break;
     }
   }
