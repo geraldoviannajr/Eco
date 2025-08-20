@@ -19,9 +19,10 @@ class Language {
             cost : 'Custo',
             
             // Game play
-            gameOver : 'Você Morreu',
-            paused : 'Pausado',
+            gameOver : 'VOCÊ MORREU',
+            paused : 'JOGO EM PAUSA',
             mapWin : 'Você Concluiu o Mapa',
+            clickToStart: 'Toque para iniciar',
             
             // Controles
             controls : 'Controles',
@@ -53,9 +54,10 @@ class Language {
             cost : 'Cost',
             
             // Game play
-            gameOver : 'You Died',
-            paused : 'Paused',
+            gameOver : 'YOU DIED',
+            paused : 'GAME PAUSED',
             mapWin : 'You Completed the Map',
+            clickToStart: 'Touch to start',
             
             // Controles
             controls : 'Controls',            

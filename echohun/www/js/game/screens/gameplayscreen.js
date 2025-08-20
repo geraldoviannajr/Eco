@@ -5,14 +5,9 @@ class GameplayScreen extends GameScreen {
     }
   }
 
-  load() {
-    //super.load();
-  }
-
   draw(ctx) {
-    //super.draw(ctx);
-    this.loaded = true;
-
+    super.draw(ctx);
+        
     // Desenho do mapa e controles
     if (window.game.map != null) {
       window.game.map.draw();
@@ -21,6 +16,11 @@ class GameplayScreen extends GameScreen {
     window.game.update();
     if (config.DEBUG || config.DEBUG_INFO) {
       window.game.drawInfo();
+    }
+
+    if (this.alpha < 1) {
+      ctx.fillStyle = "rgba(0, 0, 0, " + (1 - this.alpha) + ")";
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
   }
 

@@ -17,9 +17,11 @@ class InitScreen extends GameScreen {
     ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
     ctx.fillText(message, centerX, centerY);
 
-    ctx.font = "24px Arial";
-    ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
-    ctx.fillText("Toque para iniciar", centerX, centerY + 90);
+    if (this.loaded) {
+      ctx.font = "24px Arial";
+      ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
+      ctx.fillText(window.game.language.getResource('clickToStart'), centerX, centerY + 90);
+    }
     ctx.restore();
   }
 
@@ -60,7 +62,7 @@ class InitScreen extends GameScreen {
 
         this.unload(() => {
           console.log("Carregando Gameplay...");
-          game.screen = game.screens.gameplay;
+          game.screens.gameplay.load();
         });
 
         break;

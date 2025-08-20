@@ -3,7 +3,7 @@ class GameScreen {
   loaded = false;
   unloaded = true;
   fadeStartTime = 0;
-  fadeduration = 3000;
+  fadeduration = 2000;
   isLoading = false;
   isUnloading = false;
   _callbackFn = null;
