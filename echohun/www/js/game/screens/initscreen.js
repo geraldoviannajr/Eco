@@ -1,4 +1,31 @@
 class InitScreen extends GameScreen {
+  fadeduration = 4000;
+
+  emitEcho(x,y) {
+    var lineCount = config.CLAP_LINE_COUNT;
+    window.game.sounds.play("clap");
+
+    for (let i = 0; i < lineCount; i++) {
+      const angle = ((Math.PI * 2) / lineCount) * i;
+      window.game.lines.push(
+        new EchoLine(x, y, angle, "clap", null, config.CLAP_ECHO_BOUNCES)
+      );
+    }
+  }
+
+  startGame() {
+    console.log("Criando mapa...");
+    game.map = new Map1();
+
+    console.log("Carregando mapa...");
+    game.map.load();
+
+    this.unload(() => {
+      console.log("Carregando Gameplay...");
+      game.screens.gameplay.load();
+    });
+  }
+
   draw(ctx) {
     super.draw(ctx);
 
@@ -20,18 +47,45 @@ class InitScreen extends GameScreen {
     if (this.loaded) {
       ctx.font = "24px Arial";
       ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
-      ctx.fillText(window.game.language.getResource('clickToStart'), centerX, centerY + 90);
+      ctx.fillText(
+        window.game.language.getResource("clickToStart"),
+        centerX,
+        centerY + 90
+      );
     }
     ctx.restore();
+
+    if (window.game)
+      window.game.updateLines();
   }
 
   doEvent(eventName, e) {
-    var game = window.game;
-    if (!this.loaded) return;
+    if ((!this.loaded) || (eventName != "touchstart" && eventName != "mousedown"))
+      return;
+
+    console.log(e);
+
+    const rect = window.game.canvas.getBoundingClientRect();
+    const scaleX = window.game.canvas.width / rect.width;
+    const scaleY = window.game.canvas.height / rect.height;
+    var mouseX = 0;
+    var mouseY = 0;
 
     switch (eventName) {
-      case "touchstart":
       case "mousedown":
+        mouseX = (e.clientX - rect.left) * scaleX;
+        mouseY = (e.clientY - rect.top) * scaleY;
+        break;
+      case "touchstart":
+        var touch = e.touches[e.touches.length - 1];
+        mouseX = (touch.clientX - rect.left) * scaleX;
+        mouseY = (touch.clientY - rect.top) * scaleY;                     
+        break;
+    }
+
+    console.log(mouseX, mouseY);
+
+    if (mouseX > 0 || mouseY > 0) {
         if (window.game.sounds == null) {
           console.log("|-> Criando sons...");
           window.game.sounds = new Sounds();
@@ -53,19 +107,7 @@ class InitScreen extends GameScreen {
             });
           }
         }
-
-        console.log("Criando mapa...");
-        game.map = new Map1();
-
-        console.log("Carregando mapa...");
-        game.map.load();
-
-        this.unload(() => {
-          console.log("Carregando Gameplay...");
-          game.screens.gameplay.load();
-        });
-
-        break;
+        this.emitEcho(mouseX, mouseY);                
     }
   }
 }

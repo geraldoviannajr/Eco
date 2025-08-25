@@ -54,7 +54,8 @@ const GameEngine = (Base) =>
           this.lines.splice(i, 1);
         }
       }
-      this.map.exitDoor.visible = this.map.exitDoor.touchingLines > 0;
+      if (this.map != null)
+        this.map.exitDoor.visible = this.map.exitDoor.touchingLines > 0;
     }
 
     checkCollisions() {
