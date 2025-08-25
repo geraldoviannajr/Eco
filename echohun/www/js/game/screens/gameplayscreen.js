@@ -1,3 +1,5 @@
+
+
 class GameplayScreen extends GameScreen {
   drawControls() {
     for (const control of window.game.controls) {
