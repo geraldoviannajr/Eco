@@ -29,6 +29,7 @@ class InitScreen extends GameScreen {
     } 
 
     this.unload(() => {
+      window.game.lines = [];
       console.log("Carregando mapa...");
       window.game.map = window.game.maps[1];
       window.game.map.load(); 

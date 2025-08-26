@@ -19,9 +19,9 @@ class EchoLine {
 
     if (type == "initclap") {
       this.type = "clap";
-      this.duration = config.CLAP_ECHO_DURATION * 3;
+      this.duration = config.CLAP_ECHO_DURATION * 2;
       this.color = config.CLAP_COLOR;
-      this.expansionSpeed = config.CLAP_EXPANSION_SPEED;
+      this.expansionSpeed = config.CLAP_EXPANSION_SPEED * 1.5;
     } else if (this.type == "enemy" && this.enemy != null) {
       this.duration = this.enemy.duration;
       this.color = this.enemy.echoColor;

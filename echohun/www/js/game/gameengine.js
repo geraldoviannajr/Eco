@@ -1,13 +1,17 @@
 const GameEngine = (Base) =>
   class extends Base {
     pause() {
+      this.screens.pause.load();
       this.isPaused = true;
-      this.sounds.pauseAll();
+      this.screen = this.screen.pause;
+      if (this.sounds)
+        this.sounds.pauseAll();
     }
 
     resume() {
       this.isPaused = false;
-      this.sounds.resumeAll();
+      if (this.sounds)
+        this.sounds.resumeAll();
     }
 
     update() {
@@ -99,16 +103,13 @@ const GameEngine = (Base) =>
         this._lastFpsUpdate = now;
       }
 
-      if (this.player.isDead == true) this.screen = this.screens.gameover;
-
-      if (this.isPaused) this.screen = this.screens.pause;
+      if (this.player.isDead == true) this.screen = this.screens.gameover;       
 
       if (this.screen != null) {
         this.screen.draw(this.ctx);
-
         if (!this.isPaused) this.gameTime += this.deltaTime;
-
         requestAnimationFrame(this.animate);
       }
+
     };
   };

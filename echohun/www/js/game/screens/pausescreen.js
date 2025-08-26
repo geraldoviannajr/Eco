@@ -1,8 +1,9 @@
 class PauseScreen extends GameScreen {
   draw(ctx) {
     this.loaded = true;
+    this.alpha = 1;
 
-    ctx.fillStyle = "rgba(0, 0, 0, " + this.alpha + ")";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     const message = window.game.language.getResource('paused');
@@ -19,7 +20,7 @@ class PauseScreen extends GameScreen {
 
     ctx.font = "24px Arial";
     ctx.fillStyle = "rgba(255, 0, 0, " + this.alpha + ")";
-    ctx.fillText(window.game.language.getResource('clickToStart'), centerX, centerY + 90);
+    ctx.fillText(window.game.language.getResource('clickToReturn'), centerX, centerY + 90);
     ctx.restore();
   }
 
@@ -31,10 +32,8 @@ class PauseScreen extends GameScreen {
     switch (eventName) {
       case "touchstart":
       case "mousedown":
-        console.log("Descarregando mapa e carregando tela inicial...");
-        game.map = null;
-        game.screen = this;
-        this.loaded = false;
+        console.log("Voltando ao Gameplay...");
+        game.screen = this.screens.gameplay;
         break;
     }
   }

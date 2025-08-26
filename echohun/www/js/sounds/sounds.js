@@ -180,9 +180,11 @@ class Sounds {
     pauseAll() {
       Howler._howls.forEach(howl => {
         howl._sounds.forEach(sound => {
-          if (!sound._paused && !sound._ended) {
-            howl.pause(sound._id);
-          }
+          try {
+            if (!sound._paused && !sound._ended) {
+              howl.pause(sound._id);
+            }
+          } catch {}
         });
       });
     }
@@ -190,9 +192,11 @@ class Sounds {
     resumeAll() {
       Howler._howls.forEach(howl => {
         howl._sounds.forEach(sound => {
-          if (sound._paused && !sound._ended) {
-            howl.play(sound._id);
-          }
+          try {
+            if (sound._paused && !sound._ended) {
+              howl.play(sound._id);
+            }
+          } catch {}
         });
       });
     }

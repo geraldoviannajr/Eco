@@ -1,5 +1,3 @@
-
-
 class GameplayScreen extends GameScreen {
   drawControls() {
     for (const control of window.game.controls) {
@@ -28,6 +26,11 @@ class GameplayScreen extends GameScreen {
 
   doEvent(eventName, e) {
     if (!this.loaded) return;
+
+    if (this.isPaused) {
+      this.screens.pause.doEvent(eventName, e);
+      return;
+    }
 
     var game = window.game;
 

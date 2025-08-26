@@ -7,33 +7,36 @@ class GameScreen {
   isLoading = false;
   isUnloading = false;
   _callbackFn = null;
+  _priorScreen = null;
   constructor(game) {
     this.game = game;
   }
   
   onCompleteLoad() {
-    console.log("   |-> Tela cmpletamente carregada");
+    console.log(" |-> Tela cmpletamente carregada");
     this.isLoading = false;
     // Evento a ser executado após estar completamente carregado
     if (this._callbackFn != null) {
-      console.log("       |-> Invocando função de callback");
+      console.log("  |-> Invocando função de callback");
       this._callbackFn();
       this._callbackFn = null;
     }    
   }
 
   onCompleteUnload() {
-    console.log("    |-> Tela completamente descarregada");
+    console.log(" |-> Tela completamente descarregada");
     this.isUnloading = false;
     // Evento a ser executado após estar completamente descarregado
     if (this._callbackFn != null) {
-      console.log("       |-> Invocando função de callback");
+      console.log("  |-> Invocando função de callback");
       this._callbackFn();
       this._callbackFn = null;
     }    
   }
   
-  load(callback = null) {
+  load(callback = null, priorScreen = null) {
+    this._priorScreen = priorScreen;
+    console.log(" |-> Carregando tela " + this.constructor.name);
     this._callbackFn = callback;
     this.loaded = false;
     this.unloaded = false;
@@ -45,6 +48,7 @@ class GameScreen {
   }
 
   unload(callback = null) {
+    console.log(" |-> Descarregando tela " + this.constructor.name);
     this._callbackFn = callback;
     this.loaded = false;
     this.unloaded = false;
@@ -55,6 +59,9 @@ class GameScreen {
     window.game.screen = this;
   }
   draw(ctx) {
+    if (this.priorScreen!= null)
+      this._priorScreen.draw(ctx);
+
     const oldLoaded = this.loaded;
     const oldUnLoaded = this.unloaded;
     if (this.loaded) {
