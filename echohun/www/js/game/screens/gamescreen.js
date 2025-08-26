@@ -9,7 +9,16 @@ class GameScreen {
   _callbackFn = null;
   constructor(game) {
     this.game = game;
-  } 
+  }
+  
+  onStateChange() {
+    // Evento a ser executado após estar completamente carregado ou descarregado
+    if (this._callbackFn != null) {
+      this._callbackFn();
+      this._callbackFn = null;
+    }
+  }
+
   load(callback = null) {
     this._callbackFn = callback;
     this.loaded = false;
@@ -51,13 +60,8 @@ class GameScreen {
     if (this.alpha >= 1) this.loaded = true;
     else if (this.alpha <= 0) this.unloaded = true;
 
-    if (
-      this._callbackFn != null &&
-      ((this.isLoading && this.loaded) || (this.isUnloading && this.unloaded))
-    ) {
-      this._callbackFn();
-      this._callbackFn = null;
-    }
+    if ((this.isLoading && this.loaded) || (this.isUnloading && this.unloaded))
+      onLoad();
   }
   doEvent(eventName, e) {}
 }

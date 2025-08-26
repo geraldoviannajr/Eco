@@ -1,6 +1,14 @@
 class InitScreen extends GameScreen {
   fadeduration = 4000;
 
+  onStateChange() {
+    super.onStateChange();
+    if (this.loaded) {
+      window.game.map = window.game.maps[0];
+      window.game.map.load();
+    }
+  }
+
   emitEcho(x,y) {
     var lineCount = config.CLAP_LINE_COUNT;
     window.game.sounds.play("clap");
@@ -14,9 +22,13 @@ class InitScreen extends GameScreen {
   }
 
   startGame() {
-    console.log("Criando mapa...");
-    game.map = new Map1();
-
+    if (window.game.maps.length < 2) {
+      console.log("Criando mapas...");
+      window.game.map = new Map1();  
+      window.game.maps.push(window.game.map);
+    } else {
+      window.game.map = window.game.maps[1];
+    }
     console.log("Carregando mapa...");
     game.map.load();
 

@@ -13,6 +13,7 @@ class GameCore {
   isPaused = false;
   idTouchPlayerMove = -1; // Idetificador do toque que move o jogador, -1 significa nenhum toque ativo
   controls = [];
+  maps = [new Map0()];
   fps = 0; // Frames per second
   gameTime = 0; // Tempo de jogo em segundos
   gameState = "inactive"; //
@@ -23,9 +24,10 @@ class GameCore {
 
   loadScreen(screen) {
     if (this.screen != null)
-      this.screen.unload( () => { screen.load(); } );
-    else
-      screen.load();
+      this.screen.unload(() => {
+        screen.load();
+      });
+    else screen.load();
   }
 
   constructor(w, h) {
@@ -67,11 +69,11 @@ class GameCore {
 
     console.log("|-> Criando telas...");
     this.screens = {
-      init : new InitScreen(this),
-      gameplay : new GameplayScreen(this),
+      init: new InitScreen(this),
+      gameplay: new GameplayScreen(this),
       gameover: new GameoverScreen(this),
-      pause: new PauseScreen(this)
-    }
+      pause: new PauseScreen(this),
+    };
 
     this.screen = this.screens.init;
   }
