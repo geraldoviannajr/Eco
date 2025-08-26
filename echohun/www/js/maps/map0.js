@@ -2,8 +2,8 @@ class Map0 extends Map {
   level = 0;
   name = "Init Screen Map";
   title = "init Screen";
-  width = window.game.canvas.width; // Largura do mapa
-  height = window.game.canvas.height; // Altura do mapa
+  width = config.GAME_SCREEN_WIDTH;
+  height = config.GAME_SCREEN_HEIGHT;
 
   constructor() { super(); }
 
@@ -28,7 +28,7 @@ class Map0 extends Map {
       ],
       // Parede lateral direita
       [
-        { x: thiw.width, y: 0 },
+        { x: this.width, y: 0 },
         { x: this.width - 2, y: 0 },
         { x: this.width - 2, y: this.height },
         { x: this.width, y: 0 },

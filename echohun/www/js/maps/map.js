@@ -51,13 +51,18 @@ class Map {
   load() {
     console.log(`Carregando mapa: ${this.name}`);
     this.generateNavGrid(config.CELL_SIZE);      
+    
     for (const enemy of this.enemies) {
       console.log(` |-> Carregando inimigo: ${enemy.name}`);      
       enemy.navGrid = this.generateNavGrid(config.CELL_SIZE, enemy.radius / 4);
     }
-    console.log(` |-> Carregando player`);
-    game.player.navGrid = this.generateNavGrid(config.CELL_SIZE, game.player.radius);
-    this.objects.push(game.player);
+
+    if (game.player) {
+      console.log(` |-> Carregando player`);
+      game.player.navGrid = this.generateNavGrid(config.CELL_SIZE, game.player.radius);
+      this.objects.push(game.player);
+    }
+
     for (const enemy of this.enemies) {
       this.objects.push(enemy);
     }

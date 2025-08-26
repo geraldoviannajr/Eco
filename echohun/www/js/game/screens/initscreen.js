@@ -1,12 +1,12 @@
 class InitScreen extends GameScreen {
-  fadeduration = 4000;
+  fadeduration = 6000;
 
-  onStateChange() {
-    super.onStateChange();
-    if (this.loaded) {
-      window.game.map = window.game.maps[0];
-      window.game.map.load();
-    }
+  onCompleteLoad() {
+    super.onCompleteLoad();
+    console.log("          |-> Adicionando Mapa 0");
+    window.game.map = window.game.maps[0];
+    console.log("          |-> Carregando...");
+    window.game.map.load();
   }
 
   emitEcho(x,y) {
@@ -16,7 +16,7 @@ class InitScreen extends GameScreen {
     for (let i = 0; i < lineCount; i++) {
       const angle = ((Math.PI * 2) / lineCount) * i;
       window.game.lines.push(
-        new EchoLine(x, y, angle, "clap", null, config.CLAP_ECHO_BOUNCES)
+        new EchoLine(x, y, angle, "initclap", null, config.CLAP_ECHO_BOUNCES)
       );
     }
   }
@@ -24,28 +24,34 @@ class InitScreen extends GameScreen {
   startGame() {
     if (window.game.maps.length < 2) {
       console.log("Criando mapas...");
-      window.game.map = new Map1();  
-      window.game.maps.push(window.game.map);
-    } else {
-      window.game.map = window.game.maps[1];
-    }
-    console.log("Carregando mapa...");
-    game.map.load();
+      var map = new Map1();  
+      window.game.maps.push(map);
+    } 
 
     this.unload(() => {
+      console.log("Carregando mapa...");
+      window.game.map = window.game.maps[1];
+      window.game.map.load(); 
+      
       console.log("Carregando Gameplay...");
-      game.screens.gameplay.load();
+      window.game.screens.gameplay.load();
     });
   }
 
   draw(ctx) {
     super.draw(ctx);
-
+   
+    // Fundo Preto
     ctx.fillStyle = "rgba(0, 0, 0, " + this.alpha + ")";
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    const message = "ECHO HUNTERS";
-    ctx.save();
+    // Linhas
+    if (window.game)
+      window.game.updateLines();
+
+    // Título
+    ctx.save();    
+    const message = "ECHO HUNTERS";    
     ctx.font = "150px Horrorfind-gp0Y";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -66,9 +72,6 @@ class InitScreen extends GameScreen {
       );
     }
     ctx.restore();
-
-    if (window.game)
-      window.game.updateLines();
   }
 
   doEvent(eventName, e) {
@@ -95,8 +98,6 @@ class InitScreen extends GameScreen {
         break;
     }
 
-    console.log(mouseX, mouseY);
-
     if (mouseX > 0 || mouseY > 0) {
         if (window.game.sounds == null) {
           console.log("|-> Criando sons...");
@@ -119,7 +120,8 @@ class InitScreen extends GameScreen {
             });
           }
         }
-        this.emitEcho(mouseX, mouseY);                
+        this.emitEcho(mouseX, mouseY);
+        this.startGame();
     }
   }
 }

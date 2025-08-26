@@ -11,14 +11,28 @@ class GameScreen {
     this.game = game;
   }
   
-  onStateChange() {
-    // Evento a ser executado após estar completamente carregado ou descarregado
+  onCompleteLoad() {
+    console.log("   |-> Tela cmpletamente carregada");
+    this.isLoading = false;
+    // Evento a ser executado após estar completamente carregado
     if (this._callbackFn != null) {
+      console.log("       |-> Invocando função de callback");
       this._callbackFn();
       this._callbackFn = null;
-    }
+    }    
   }
 
+  onCompleteUnload() {
+    console.log("    |-> Tela completamente descarregada");
+    this.isUnloading = false;
+    // Evento a ser executado após estar completamente descarregado
+    if (this._callbackFn != null) {
+      console.log("       |-> Invocando função de callback");
+      this._callbackFn();
+      this._callbackFn = null;
+    }    
+  }
+  
   load(callback = null) {
     this._callbackFn = callback;
     this.loaded = false;
@@ -41,16 +55,18 @@ class GameScreen {
     window.game.screen = this;
   }
   draw(ctx) {
-    if (this.loaded) this.alpha = 1;
-    else {
+    const oldLoaded = this.loaded;
+    const oldUnLoaded = this.unloaded;
+    if (this.loaded) {
+      this.alpha = 1;
+    } else {
       if (this.fadeStartTime == 0) {
         this.fadeStartTime = this.game.gameTime;
         this.alpha == this.isLoading ? 0 : 1;
       } else {
-        this.alpha =
-          (this.game.gameTime - this.fadeStartTime) / this.fadeduration;
+        this.alpha = (this.game.gameTime - this.fadeStartTime) / this.fadeduration;
         
-          if (this.isUnloading)
+        if (this.isUnloading)
           this.alpha = 1 - this.alpha;
 
         if (this.alpha > 1) this.alpha = 1;
@@ -60,8 +76,10 @@ class GameScreen {
     if (this.alpha >= 1) this.loaded = true;
     else if (this.alpha <= 0) this.unloaded = true;
 
-    if ((this.isLoading && this.loaded) || (this.isUnloading && this.unloaded))
-      onLoad();
+    if (!oldLoaded && this.loaded) 
+      this.onCompleteLoad();
+    else if (!oldUnLoaded && this.unloaded)
+      this.onCompleteUnload();
   }
   doEvent(eventName, e) {}
 }
